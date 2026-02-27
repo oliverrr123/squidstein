@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://ck1bqik2goep6"]
+
+[ext_resource type="Texture2D" uid="uid://bk2ul6cxdncve" path="res://cell.png" id="1_de71e"]
+[ext_resource type="Script" uid="uid://cwkcy43ghi7x8" path="res://player.gd" id="2_gtbg5"]
+[ext_resource type="Texture2D" uid="uid://b25mdfd3bpsnv" path="res://guy.png" id="3_dxl2x"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_de71e"]
+radius = 223.80952
+height = 1361.9047
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7lw5h"]
+size = Vector2(2226, 261.5)
+
+[node name="CellScene" type="Node2D" unique_id=1713411284]
+
+[node name="Room2" type="Node2D" parent="." unique_id=691931262]
+position = Vector2(3200, 0)
+rotation = 3.1415927
+
+[node name="CellBg" type="Sprite2D" parent="Room2" unique_id=1257915129]
+rotation = -1.5707964
+scale = Vector2(-1, 1)
+texture = ExtResource("1_de71e")
+
+[node name="Player" type="CharacterBody2D" parent="Room2/CellBg" unique_id=1601482600]
+position = Vector2(0, 200)
+rotation = 1.5707964
+
+[node name="Sprite2D" type="Sprite2D" parent="Room2/CellBg/Player" unique_id=623121341]
+position = Vector2(53, 211)
+scale = Vector2(0.42, 0.42)
+texture = ExtResource("3_dxl2x")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room2/CellBg/Player" unique_id=1480423083]
+position = Vector2(53, 217)
+scale = Vector2(0.42, 0.42)
+shape = SubResource("CapsuleShape2D_de71e")
+
+[node name="Walls" type="StaticBody2D" parent="Room2" unique_id=1287955682]
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="Room2/Walls" unique_id=2060630348]
+position = Vector2(1140, 28.999977)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="Room2/Walls" unique_id=650389231]
+position = Vector2(-1146, -2)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Room2/Walls" unique_id=11146482]
+position = Vector2(-26, 860)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room2/Walls" unique_id=112369243]
+position = Vector2(9, -987)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="Room" type="Node2D" parent="." unique_id=1073144728]
+
+[node name="CellBg" type="Sprite2D" parent="Room" unique_id=268650058]
+rotation = -1.5707964
+texture = ExtResource("1_de71e")
+
+[node name="Player" type="CharacterBody2D" parent="Room" unique_id=28528060]
+script = ExtResource("2_gtbg5")
+
+[node name="Sprite2D" type="Sprite2D" parent="Room/Player" unique_id=1017366560]
+position = Vector2(53, 211)
+scale = Vector2(0.42, 0.42)
+texture = ExtResource("3_dxl2x")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room/Player" unique_id=395474558]
+position = Vector2(53, 217)
+scale = Vector2(0.42, 0.42)
+shape = SubResource("CapsuleShape2D_de71e")
+
+[node name="Walls" type="StaticBody2D" parent="Room" unique_id=79756533]
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="Room/Walls" unique_id=1439501618]
+position = Vector2(1140, 28.999977)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="Room/Walls" unique_id=204628789]
+position = Vector2(-1146, -2)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Room/Walls" unique_id=985472481]
+position = Vector2(-26, 860)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room/Walls" unique_id=338118922]
+position = Vector2(9, -987)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1402958804]
+offset = Vector2(1000, 0)
+zoom = Vector2(0.4, 0.4)

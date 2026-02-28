@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://bqw6eo53idtcp"]
+
+[ext_resource type="Texture2D" uid="uid://c2bei8locmwrh" path="res://hall.png" id="1_b0mls"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7lw5h"]
+size = Vector2(2226, 261.5)
+
+[node name="CellScene" type="Node2D" unique_id=1713411284]
+
+[node name="Room2" type="Node2D" parent="." unique_id=691931262]
+rotation = 3.1415927
+
+[node name="CellBg" type="Sprite2D" parent="Room2" unique_id=1257915129]
+rotation = -1.5707964
+scale = Vector2(-1, 1)
+texture = ExtResource("1_b0mls")
+
+[node name="Walls" type="StaticBody2D" parent="Room2" unique_id=1287955682]
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="Room2/Walls" unique_id=2060630348]
+position = Vector2(1140, 28.999977)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="Room2/Walls" unique_id=650389231]
+position = Vector2(-1146, -2)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Room2/Walls" unique_id=11146482]
+position = Vector2(-26, 860)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Room2/Walls" unique_id=112369243]
+position = Vector2(9, -987)
+shape = SubResource("RectangleShape2D_7lw5h")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1402958804]
+zoom = Vector2(0.44, 0.44)

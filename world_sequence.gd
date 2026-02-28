@@ -58,6 +58,7 @@ const CHECKPOINT_CELL_POSITION := Vector2(500, 400)
 const CHECKPOINT_DOCTOR_POSITION := Vector2(3920, -4920)
 const CHECKPOINT_PRE_SURGERY_POSITION := Vector2(5240, -5080)
 const CHECKPOINT_STORAGE_POSITION := Vector2(520, -3920)
+const CHECKPOINT_GALLERY_POSITION := Vector2(0, -5520)
 const CUE_TWO_PICKUP_POSITION := Vector2(5520, -5080)
 const CUE_THREE_PICKUP_POSITION := Vector2(4960, -5200) # Staff Room desk
 const STORAGE_DOOR_POSITION := Vector2(1168, -3920) # Hallway wall gateway to storage area
@@ -65,7 +66,22 @@ const STORAGE_DOOR_INTERACT_HALF_WIDTH := 220.0
 const STORAGE_DOOR_INTERACT_HALF_HEIGHT := 260.0
 const STORAGE_CUE_FOUR_POSITION := Vector2(460, -4040)
 const STORAGE_BOX_POSITION := Vector2(120, -3920)
+const STORAGE_ELEVATOR_POSITION := Vector2(260, -3660)
+const UPPER_ELEVATOR_POSITION := Vector2(-40, -5020)
 const CUE_FIVE_INVOICE_TEXT := "Invoice (Cue 5):\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
+const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
+const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
+const GALLERY_STATUE_POSITION := Vector2(0, -5420)
+const CUE_SEVEN_STATUE_TEXT := "Cue 7 (Statue): Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
+const ROOM_CELL := Rect2(0, 0, 1200, 800)
+const ROOM_HALLWAY := Rect2(1200, -5000, 320, 5800)
+const ROOM_TURN1 := Rect2(1520, -3200, 1600, 320)
+const ROOM_TURN_VERTICAL := Rect2(2800, -5000, 320, 2120)
+const ROOM_TURN2 := Rect2(3120, -5000, 320, 320)
+const ROOM_END := Rect2(3440, -5480, 1200, 800)
+const ROOM_PRE := Rect2(4640, -5480, 1200, 800)
+const ROOM_STORAGE := Rect2(-484, -4400, 1620, 960)
+const ROOM_SECOND_FLOOR := Rect2(-980, -6200, 1960, 1360)
 
 enum SequenceState {
 	IDLE,
@@ -170,11 +186,22 @@ var cue_three_in_range := false
 var cue_four_pickup: Area2D
 var cue_four_sprite: Sprite2D
 var cue_four_in_range := false
+var cue_seven_pickup: Area2D
+var cue_seven_sprite: Sprite2D
+var cue_seven_in_range := false
 var storage_box_area: Area2D
 var storage_box_sprite: Sprite2D
 var storage_box_in_range := false
+var storage_elevator_area: Area2D
+var storage_elevator_in_range := false
+var upper_elevator_area: Area2D
+var upper_elevator_in_range := false
 var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
+var visibility_fx_layer: CanvasLayer
+var visibility_fx_rect: ColorRect
+var room_vision_enabled := false
+var current_room_index := -1
 var pre_surgery_lock_default_layer := 0
 var pre_surgery_lock_default_mask := 0
 var pre_surgery_unlocked := false
@@ -184,12 +211,14 @@ var checkpoint_positions: Array[Vector2] = [
 	CHECKPOINT_DOCTOR_POSITION,
 	CHECKPOINT_PRE_SURGERY_POSITION,
 	CHECKPOINT_STORAGE_POSITION,
+	CHECKPOINT_GALLERY_POSITION,
 ]
 var checkpoint_names: Array[String] = [
 	"Cell",
 	"Doctor Room",
 	"Pre-Surgery Room",
 	"Storage Wing",
+	"Gallery",
 ]
 var current_checkpoint_index := 0
 
@@ -208,6 +237,10 @@ func _ready() -> void:
 	_setup_storage_door()
 	_setup_cue_four_pickup()
 	_setup_storage_box()
+	_setup_elevator_points()
+	_setup_visibility_fx()
+	_setup_gallery_interior()
+	_setup_cue_seven_pickup()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
 	if pre_lock_body != null:
 		pre_surgery_lock_default_layer = pre_lock_body.collision_layer
@@ -224,6 +257,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_update_keycard_fx(delta)
 	_update_inventory_visibility()
+	_update_visibility_fx()
 	_handle_checkpoint_cheat_input()
 	match state:
 		SequenceState.DIALOGUE:
@@ -415,6 +449,7 @@ func _advance_dialogue() -> void:
 	dialogue_panel.visible = false
 	player.set_physics_process(true)
 	if state == SequenceState.DIALOGUE:
+		room_vision_enabled = true
 		state = SequenceState.DONE
 
 func _start_guard_sequence() -> void:
@@ -566,9 +601,15 @@ func _handle_disguise_interaction() -> void:
 		return
 	if _handle_storage_door_interaction():
 		return
+	if _handle_storage_elevator_interaction():
+		return
+	if _handle_upper_elevator_interaction():
+		return
 	if _handle_cue_four_interaction():
 		return
 	if _handle_storage_box_interaction():
+		return
+	if _handle_cue_seven_interaction():
 		return
 
 	if not is_disguised and player_in_disguise_area:
@@ -813,9 +854,9 @@ func _setup_inventory_ui() -> void:
 func _update_inventory_visibility() -> void:
 	if inventory_panel == null:
 		return
-	# Keep clue text readable: hide bottom inventory when dialogue is open.
 	var show_hover := hovered_inventory_index > 0 and not dialogue_panel.visible
-	inventory_panel.visible = not dialogue_panel.visible
+	# Inventory should always remain visible above gameplay shadows.
+	inventory_panel.visible = true
 	if inventory_hover_panel != null:
 		inventory_hover_panel.visible = show_hover
 
@@ -885,6 +926,8 @@ func _get_default_cue_note(index_1_based: int) -> String:
 			return "Cue 4 (Crowbar): Tool used to force open sealed crates and boxes."
 		5:
 			return CUE_FIVE_INVOICE_TEXT
+		7:
+			return CUE_SEVEN_STATUE_TEXT
 		_:
 			return "Cue %d: Collected evidence." % index_1_based
 
@@ -1203,6 +1246,311 @@ func _handle_storage_box_interaction() -> bool:
 		dialogue_label.text = "Heavy box. You need a crowbar."
 	return true
 
+func _setup_elevator_points() -> void:
+	storage_elevator_area = Area2D.new()
+	storage_elevator_area.name = "StorageElevatorArea"
+	storage_elevator_area.global_position = STORAGE_ELEVATOR_POSITION
+	add_child(storage_elevator_area)
+
+	var storage_shape := CollisionShape2D.new()
+	var storage_circle := CircleShape2D.new()
+	storage_circle.radius = 82.0
+	storage_shape.shape = storage_circle
+	storage_elevator_area.add_child(storage_shape)
+
+	var storage_sprite := Sprite2D.new()
+	storage_sprite.texture = _create_elevator_texture()
+	storage_sprite.scale = Vector2(0.9, 0.9)
+	storage_sprite.z_index = 4
+	storage_elevator_area.add_child(storage_sprite)
+
+	storage_elevator_area.body_entered.connect(_on_storage_elevator_body_entered)
+	storage_elevator_area.body_exited.connect(_on_storage_elevator_body_exited)
+
+	upper_elevator_area = Area2D.new()
+	upper_elevator_area.name = "UpperElevatorArea"
+	upper_elevator_area.global_position = UPPER_ELEVATOR_POSITION
+	add_child(upper_elevator_area)
+
+	var upper_shape := CollisionShape2D.new()
+	var upper_circle := CircleShape2D.new()
+	upper_circle.radius = 82.0
+	upper_shape.shape = upper_circle
+	upper_elevator_area.add_child(upper_shape)
+
+	var upper_sprite := Sprite2D.new()
+	upper_sprite.texture = _create_elevator_texture()
+	upper_sprite.scale = Vector2(0.9, 0.9)
+	upper_sprite.z_index = 4
+	upper_elevator_area.add_child(upper_sprite)
+
+	upper_elevator_area.body_entered.connect(_on_upper_elevator_body_entered)
+	upper_elevator_area.body_exited.connect(_on_upper_elevator_body_exited)
+
+func _on_storage_elevator_body_entered(body: Node2D) -> void:
+	if body != player:
+		return
+	storage_elevator_in_range = true
+
+func _on_storage_elevator_body_exited(body: Node2D) -> void:
+	if body != player:
+		return
+	storage_elevator_in_range = false
+
+func _on_upper_elevator_body_entered(body: Node2D) -> void:
+	if body != player:
+		return
+	upper_elevator_in_range = true
+
+func _on_upper_elevator_body_exited(body: Node2D) -> void:
+	if body != player:
+		return
+	upper_elevator_in_range = false
+
+func _handle_storage_elevator_interaction() -> bool:
+	if not storage_unlocked:
+		return false
+	if not storage_elevator_in_range:
+		return false
+	dialogue_panel.visible = true
+	dialogue_label.text = "Press E to take elevator to Upper Floor."
+	if Input.is_action_just_pressed("interact"):
+		player.global_position = UPPER_ELEVATOR_POSITION + Vector2(0, 120)
+		current_checkpoint_index = 4
+		dialogue_panel.visible = false
+	return true
+
+func _handle_upper_elevator_interaction() -> bool:
+	if not upper_elevator_in_range:
+		return false
+	dialogue_panel.visible = true
+	dialogue_label.text = "Press E to take elevator to Storage."
+	if Input.is_action_just_pressed("interact"):
+		player.global_position = STORAGE_ELEVATOR_POSITION + Vector2(0, 120)
+		dialogue_panel.visible = false
+	return true
+
+func _create_elevator_texture() -> Texture2D:
+	var img := Image.create(196, 228, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var frame := Color(0.78, 0.82, 0.9, 1.0)
+	var frame_dark := Color(0.38, 0.42, 0.52, 1.0)
+	var door := Color(0.86, 0.89, 0.96, 1.0)
+	var door_shadow := Color(0.73, 0.78, 0.88, 1.0)
+	for y in range(8, 220):
+		for x in range(28, 184):
+			img.set_pixel(x, y, frame)
+	for y in range(16, 212):
+		img.set_pixel(28, y, frame_dark)
+		img.set_pixel(183, y, frame_dark)
+	for x in range(28, 184):
+		img.set_pixel(x, 8, frame_dark)
+		img.set_pixel(x, 219, frame_dark)
+	for y in range(54, 204):
+		for x in range(42, 106):
+			img.set_pixel(x, y, door)
+		for x in range(106, 170):
+			img.set_pixel(x, y, door_shadow)
+	for y in range(54, 204):
+		img.set_pixel(106, y, frame_dark)
+	for y in range(24, 44):
+		for x in range(78, 134):
+			img.set_pixel(x, y, Color(0.13, 0.14, 0.16, 1.0))
+	for y in range(29, 39):
+		for x in range(98, 114):
+			img.set_pixel(x, y, Color(0.95, 0.75, 0.2, 1.0))
+	for y in range(102, 126):
+		for x in range(8, 24):
+			img.set_pixel(x, y, frame)
+	for y in range(102, 126):
+		img.set_pixel(8, y, frame_dark)
+		img.set_pixel(23, y, frame_dark)
+	for x in range(8, 24):
+		img.set_pixel(x, 102, frame_dark)
+		img.set_pixel(x, 125, frame_dark)
+	return ImageTexture.create_from_image(img)
+
+func _setup_visibility_fx() -> void:
+	visibility_fx_layer = CanvasLayer.new()
+	visibility_fx_layer.layer = 3
+	add_child(visibility_fx_layer)
+
+	visibility_fx_rect = ColorRect.new()
+	visibility_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var shader := Shader.new()
+	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.18;\nuniform float softness = 0.09;\nuniform float dim_alpha = 0.90;\nuniform bool use_room_rect = false;\nuniform vec4 room_rect_uv = vec4(0.0, 0.0, 1.0, 1.0);\nvoid fragment() {\n\tfloat reveal = 0.0;\n\tif (use_room_rect) {\n\t\tfloat inside = step(room_rect_uv.x, SCREEN_UV.x) * step(room_rect_uv.y, SCREEN_UV.y) * step(SCREEN_UV.x, room_rect_uv.z) * step(SCREEN_UV.y, room_rect_uv.w);\n\t\treveal = inside;\n\t} else {\n\t\tfloat d = distance(SCREEN_UV, center_uv);\n\t\treveal = 1.0 - smoothstep(radius, radius + softness, d);\n\t}\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	visibility_fx_rect.material = mat
+	visibility_fx_layer.add_child(visibility_fx_rect)
+
+func _update_visibility_fx() -> void:
+	if visibility_fx_rect == null:
+		return
+	visibility_fx_rect.visible = room_vision_enabled
+	if not visibility_fx_rect.visible:
+		return
+	var mat := visibility_fx_rect.material as ShaderMaterial
+	if mat == null:
+		return
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var screen_pos := get_viewport().get_canvas_transform() * player.global_position
+	var center_uv := Vector2(screen_pos.x / viewport_size.x, screen_pos.y / viewport_size.y)
+	mat.set_shader_parameter("center_uv", center_uv)
+	var room_rect := _get_current_room_world_rect()
+	if room_rect.size.x > 0.0 and room_rect.size.y > 0.0:
+		var p1 := get_viewport().get_canvas_transform() * room_rect.position
+		var p2 := get_viewport().get_canvas_transform() * (room_rect.position + room_rect.size)
+		var x1 := minf(p1.x, p2.x) / viewport_size.x
+		var y1 := minf(p1.y, p2.y) / viewport_size.y
+		var x2 := maxf(p1.x, p2.x) / viewport_size.x
+		var y2 := maxf(p1.y, p2.y) / viewport_size.y
+		mat.set_shader_parameter("use_room_rect", true)
+		mat.set_shader_parameter("room_rect_uv", Vector4(x1, y1, x2, y2))
+	else:
+		mat.set_shader_parameter("use_room_rect", false)
+
+func _get_current_room_world_rect() -> Rect2:
+	var p := player.global_position
+	var rooms := [
+		ROOM_CELL,
+		ROOM_HALLWAY,
+		ROOM_TURN1,
+		ROOM_TURN_VERTICAL,
+		ROOM_TURN2,
+		ROOM_END,
+		ROOM_PRE,
+		ROOM_STORAGE,
+		ROOM_SECOND_FLOOR,
+	]
+	if current_room_index >= 0 and current_room_index < rooms.size():
+		# Keep current room until player has clearly left it; prevents edge flicker.
+		var sticky: Rect2 = rooms[current_room_index].grow(8.0)
+		if sticky.has_point(p):
+			return rooms[current_room_index]
+	for i in range(rooms.size()):
+		if rooms[i].has_point(p):
+			current_room_index = i
+			return rooms[i]
+	current_room_index = -1
+	return Rect2()
+
+func _setup_gallery_interior() -> void:
+	var gallery_root := Node2D.new()
+	gallery_root.name = "GalleryInterior"
+	add_child(gallery_root)
+
+	var clock := Sprite2D.new()
+	clock.texture = _create_clock_texture()
+	clock.position = GALLERY_CLOCK_POSITION
+	clock.scale = Vector2(1.05, 1.05)
+	clock.z_index = 3
+	gallery_root.add_child(clock)
+
+	var shelf := Sprite2D.new()
+	shelf.texture = _create_bookshelf_texture()
+	shelf.position = GALLERY_BOOKSHELF_POSITION
+	shelf.scale = Vector2(1.2, 1.2)
+	shelf.z_index = 3
+	gallery_root.add_child(shelf)
+
+func _setup_cue_seven_pickup() -> void:
+	cue_seven_pickup = Area2D.new()
+	cue_seven_pickup.name = "Cue7Pickup"
+	cue_seven_pickup.global_position = GALLERY_STATUE_POSITION
+	add_child(cue_seven_pickup)
+
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 70.0
+	shape.shape = circle
+	cue_seven_pickup.add_child(shape)
+
+	cue_seven_sprite = Sprite2D.new()
+	cue_seven_sprite.texture = _get_key_texture_for_uses(7)
+	cue_seven_sprite.scale = Vector2(0.16, 0.16)
+	cue_seven_sprite.z_index = 6
+	cue_seven_pickup.add_child(cue_seven_sprite)
+
+	cue_seven_pickup.body_entered.connect(_on_cue_seven_body_entered)
+	cue_seven_pickup.body_exited.connect(_on_cue_seven_body_exited)
+	_update_cue_seven_visibility()
+
+func _update_cue_seven_visibility() -> void:
+	var already_collected := cue_collected.size() > 6 and cue_collected[6]
+	if cue_seven_pickup != null:
+		cue_seven_pickup.monitoring = not already_collected
+		cue_seven_pickup.monitorable = not already_collected
+	if cue_seven_sprite != null:
+		cue_seven_sprite.visible = not already_collected
+	if already_collected:
+		cue_seven_in_range = false
+
+func _on_cue_seven_body_entered(body: Node2D) -> void:
+	if body != player:
+		return
+	if cue_collected.size() > 6 and cue_collected[6]:
+		return
+	cue_seven_in_range = true
+
+func _on_cue_seven_body_exited(body: Node2D) -> void:
+	if body != player:
+		return
+	cue_seven_in_range = false
+
+func _handle_cue_seven_interaction() -> bool:
+	if cue_collected.size() <= 6 or cue_collected[6]:
+		return false
+	if not cue_seven_in_range:
+		return false
+	dialogue_panel.visible = true
+	dialogue_label.text = "Press E to inspect statue fragment (Cue 7)."
+	if Input.is_action_just_pressed("interact"):
+		_set_cue_collected(7, true)
+		cue_notes[7] = CUE_SEVEN_STATUE_TEXT
+		current_checkpoint_index = 4
+		_update_cue_seven_visibility()
+		_show_keycard_fx_for_cue(7)
+		dialogue_label.text = "%s\n\n[Press E]" % CUE_SEVEN_STATUE_TEXT
+	return true
+
+func _create_clock_texture() -> Texture2D:
+	var img := Image.create(120, 260, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var wood := Color(0.46, 0.27, 0.11, 1.0)
+	for y in range(0, 260):
+		for x in range(18, 102):
+			img.set_pixel(x, y, wood)
+	for y in range(24, 114):
+		for x in range(28, 92):
+			var dx := float(x - 60)
+			var dy := float(y - 69)
+			if dx * dx + dy * dy <= 28.0 * 28.0:
+				img.set_pixel(x, y, Color(0.92, 0.86, 0.78, 1.0))
+	for y in range(148, 238):
+		for x in range(28, 92):
+			img.set_pixel(x, y, Color(0.36, 0.23, 0.16, 1.0))
+	return ImageTexture.create_from_image(img)
+
+func _create_bookshelf_texture() -> Texture2D:
+	var img := Image.create(220, 220, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.58, 0.37, 0.18, 1.0))
+	var shelf_dark := Color(0.34, 0.19, 0.11, 1.0)
+	for y in range(18, 202):
+		for x in range(20, 200):
+			img.set_pixel(x, y, shelf_dark)
+	for y in [70, 122, 174]:
+		for x in range(20, 200):
+			img.set_pixel(x, y, Color(0.8, 0.63, 0.4, 1.0))
+	for x in range(30, 190, 16):
+		var h := 22 + (x % 28)
+		var shade_step := int(x / 16) % 4
+		for y in range(40, 40 + h):
+			img.set_pixel(x, y, Color(0.35 + float(shade_step) * 0.12, 0.45, 0.78, 1.0))
+	return ImageTexture.create_from_image(img)
+
 func _refresh_key_hud() -> void:
 	var found_count := _get_collected_cue_count()
 	if key_hud_label != null:
@@ -1240,12 +1588,15 @@ func _on_anesthesia_failed() -> void:
 func _reset_to_checkpoint(index: int) -> void:
 	var clamped := clampi(index, 0, checkpoint_positions.size() - 1)
 	current_checkpoint_index = clamped
+	current_room_index = -1
 	player.global_position = checkpoint_positions[clamped]
 	guard.visible = false
 	guard_exit_running = false
 	escorting = false
 	path_index = 0
 	player_in_disguise_area = false
+	storage_elevator_in_range = false
+	upper_elevator_in_range = false
 	doctor_sequence_started = false
 	anesthesia_started = false
 	anesthesia_won = false
@@ -1278,6 +1629,7 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	if index == 0:
 		# Full story reset (cell start).
+		room_vision_enabled = false
 		has_keycard = false
 		key_uses = 0
 		cue_notes.clear()
@@ -1288,6 +1640,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
 		is_disguised = false
@@ -1306,6 +1659,7 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	if index == 1:
 		# Doctor checkpoint restart.
+		room_vision_enabled = true
 		has_keycard = false
 		key_uses = 0
 		cue_notes.clear()
@@ -1316,6 +1670,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
 		is_disguised = false
@@ -1334,6 +1689,7 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	if index == 2:
 		# Pre-surgery checkpoint restart.
+		room_vision_enabled = true
 		has_keycard = true
 		key_uses = 0
 		cue_notes.clear()
@@ -1345,6 +1701,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
 		is_disguised = true
@@ -1367,7 +1724,47 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_key_hud()
 		return
 
-	# Storage checkpoint restart (after Cue 3).
+	if index == 3:
+		# Storage checkpoint restart (after Cue 3).
+		room_vision_enabled = true
+		has_keycard = true
+		key_uses = 0
+		cue_notes.clear()
+		hovered_inventory_index = -1
+		latest_collected_cue_index = 0
+		for i in range(cue_collected.size()):
+			cue_collected[i] = false
+		_set_cue_collected(1, true)
+		_set_cue_collected(2, true)
+		_set_cue_collected(3, true)
+		_refresh_inventory_ui()
+		_update_cue_two_visibility()
+		_update_cue_three_visibility()
+		_update_cue_seven_visibility()
+		storage_unlocked = true
+		_update_storage_door_visibility()
+		is_disguised = true
+		player_in_disguise_area = false
+		cell_door_lock.disabled = true
+		trigger_area.set_deferred("monitoring", false)
+		var player_sprite3 := player_cube as Sprite2D
+		if player_sprite3 != null:
+			player_sprite3.texture = DOCTOR_DISGUISE_TEXTURE
+			player_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		var doctor_sprite3 := doctor_cube as Sprite2D
+		if doctor_sprite3 != null:
+			doctor_sprite3.texture = DOCTOR_FAINT_TEXTURE
+			doctor_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		_unlock_pre_surgery_door()
+		dialogue_panel.visible = false
+		minigame_ui.visible = false
+		player.set_physics_process(true)
+		state = SequenceState.DONE
+		_refresh_key_hud()
+		return
+
+	# Gallery checkpoint restart (after Cue 7).
+	room_vision_enabled = true
 	has_keycard = true
 	key_uses = 0
 	cue_notes.clear()
@@ -1378,23 +1775,29 @@ func _restart_from_checkpoint(index: int) -> void:
 	_set_cue_collected(1, true)
 	_set_cue_collected(2, true)
 	_set_cue_collected(3, true)
+	_set_cue_collected(4, true)
+	_set_cue_collected(5, true)
+	_set_cue_collected(7, true)
+	cue_notes[5] = CUE_FIVE_INVOICE_TEXT
+	cue_notes[7] = CUE_SEVEN_STATUE_TEXT
 	_refresh_inventory_ui()
 	_update_cue_two_visibility()
 	_update_cue_three_visibility()
-	storage_unlocked = false
+	_update_cue_seven_visibility()
+	storage_unlocked = true
 	_update_storage_door_visibility()
 	is_disguised = true
 	player_in_disguise_area = false
 	cell_door_lock.disabled = true
 	trigger_area.set_deferred("monitoring", false)
-	var player_sprite3 := player_cube as Sprite2D
-	if player_sprite3 != null:
-		player_sprite3.texture = DOCTOR_DISGUISE_TEXTURE
-		player_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	var doctor_sprite3 := doctor_cube as Sprite2D
-	if doctor_sprite3 != null:
-		doctor_sprite3.texture = DOCTOR_FAINT_TEXTURE
-		doctor_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	var player_sprite4 := player_cube as Sprite2D
+	if player_sprite4 != null:
+		player_sprite4.texture = DOCTOR_DISGUISE_TEXTURE
+		player_sprite4.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	var doctor_sprite4 := doctor_cube as Sprite2D
+	if doctor_sprite4 != null:
+		doctor_sprite4.texture = DOCTOR_FAINT_TEXTURE
+		doctor_sprite4.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	_unlock_pre_surgery_door()
 	dialogue_panel.visible = false
 	minigame_ui.visible = false

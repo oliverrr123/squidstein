@@ -22,6 +22,7 @@ extends Node2D
 @onready var needle: ColorRect = $MinigameUI/Panel/TimingLine/Needle
 
 @export var guard_speed := 300.0
+@export var guard_escort_speed := 420.0
 @export var npc_follow_speed := 240.0
 @export var doctor_speed := 180.0
 const GUARD_SPAWN_POSITION := Vector2(1360, -700)
@@ -37,6 +38,7 @@ const DOCTOR_DISGUISE_TEXTURE := preload("res://doc_guy.png")
 const DOCTOR_FAINT_TEXTURE := preload("res://doc_switched.png")
 const PLAYER_DEFAULT_TEXTURE := preload("res://guy.png")
 const DOCTOR_DEFAULT_TEXTURE := preload("res://doc.png")
+const SUNBURST_TEXTURE := preload("res://sunburst.png")
 const PRE_SURGERY_UNLOCK_DISTANCE := 140.0
 const KEY_USE_MAX := 11
 const CUE_PICKUP_AMOUNT := 1
@@ -145,8 +147,13 @@ var key_uses := 0
 var keycard_fx_timer := 0.0
 var keycard_fx_duration := 3.0
 var keycard_fx_active := false
+var keycard_fx_intro_duration := 0.35
+var keycard_fx_fade_duration := 0.45
+var keycard_fx_spin_speed := 1.2
+var keycard_fx_final_scale := 1.18
+var keycard_fx_icon_final_scale := 1.08
 var keycard_fx_layer: CanvasLayer
-var keycard_fx_rect: ColorRect
+var keycard_fx_rect: TextureRect
 var keycard_fx_label: Label
 var keycard_fx_icon: TextureRect
 var key_hud_icon: TextureRect
@@ -258,15 +265,15 @@ func _physics_process(delta: float) -> void:
 		SequenceState.GUARD_TO_PLAYER:
 			_try_unlock_cell_door_on_guard_touch()
 			if guard_return_phase == 0:
-				var reached_hall := _move_to_point(guard, Vector2(1360, 400), guard_speed, delta)
+				var reached_hall := _move_to_point(guard, Vector2(1360, 400), guard_escort_speed, delta)
 				if reached_hall:
 					guard_return_phase = 1
 			else:
-				var reached_player := _move_to_point(guard, player.global_position + PLAYER_ESCORT_OFFSET, guard_speed, delta)
+				var reached_player := _move_to_point(guard, player.global_position + PLAYER_ESCORT_OFFSET, guard_escort_speed, delta)
 				if reached_player or guard.global_position.distance_to(player.global_position) < PLAYER_GRAB_DISTANCE:
 					_start_escort_player()
 		SequenceState.ESCORT_PLAYER:
-			var reached_dest := _move_along_path(guard, escort_player_path, guard_speed, delta)
+			var reached_dest := _move_along_path(guard, escort_player_path, guard_escort_speed, delta)
 			# Hard-attach player to guard so pickup looks intentional.
 			player.global_position = guard.global_position + PLAYER_ESCORT_OFFSET
 			if reached_dest:
@@ -624,14 +631,13 @@ func _setup_keycard_fx_ui() -> void:
 	keycard_fx_layer.layer = 20
 	add_child(keycard_fx_layer)
 
-	keycard_fx_rect = ColorRect.new()
+	keycard_fx_rect = TextureRect.new()
 	keycard_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	keycard_fx_rect.visible = false
-	var shader := Shader.new()
-	shader.code = "shader_type canvas_item;\nuniform float t = 0.0;\nvoid fragment() {\n\tvec2 p = UV - vec2(0.5);\n\tfloat a = atan(p.y, p.x);\n\tfloat r = length(p);\n\tfloat rays = pow(abs(sin(a * 14.0 + t * 8.0)), 5.0);\n\tfloat fade = smoothstep(1.15, 0.08, r);\n\tfloat alpha = rays * fade * 0.6;\n\tvec3 col = mix(vec3(1.0, 0.45, 0.05), vec3(1.0, 0.9, 0.2), rays);\n\tCOLOR = vec4(col, alpha);\n}\n"
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	keycard_fx_rect.material = mat
+	keycard_fx_rect.texture = SUNBURST_TEXTURE
+	keycard_fx_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	keycard_fx_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	keycard_fx_rect.modulate = Color(1, 1, 1, 0.9)
 	keycard_fx_layer.add_child(keycard_fx_rect)
 
 	keycard_fx_label = Label.new()
@@ -661,17 +667,32 @@ func _show_keycard_fx_for_cue(index_1_based: int) -> void:
 	keycard_fx_timer = 0.0
 	keycard_fx_rect.visible = true
 	keycard_fx_label.visible = false
+	keycard_fx_rect.rotation = 0.0
+	keycard_fx_rect.scale = Vector2.ZERO
+	keycard_fx_rect.position = Vector2.ZERO
+	keycard_fx_rect.pivot_offset = get_viewport_rect().size * 0.5
 	if keycard_fx_icon != null:
 		keycard_fx_icon.texture = _get_key_texture_for_uses(index_1_based)
 		keycard_fx_icon.visible = true
+		keycard_fx_icon.scale = Vector2.ZERO
+		keycard_fx_icon.rotation = 0.0
+		keycard_fx_icon.pivot_offset = keycard_fx_icon.size * 0.5
 
 func _update_keycard_fx(delta: float) -> void:
 	if not keycard_fx_active:
 		return
 	keycard_fx_timer += delta
-	var mat := keycard_fx_rect.material as ShaderMaterial
-	if mat != null:
-		mat.set_shader_parameter("t", keycard_fx_timer)
+	var intro_t: float = clampf(keycard_fx_timer / keycard_fx_intro_duration, 0.0, 1.0)
+	var intro_ease: float = 1.0 - pow(1.0 - intro_t, 3.0)
+	var fade_start: float = maxf(0.0, keycard_fx_duration - keycard_fx_fade_duration)
+	var fade_t: float = clampf((keycard_fx_timer - fade_start) / keycard_fx_fade_duration, 0.0, 1.0)
+	var fade_alpha: float = 1.0 - fade_t
+	keycard_fx_rect.rotation += delta * keycard_fx_spin_speed
+	keycard_fx_rect.scale = Vector2.ONE * lerpf(0.0, keycard_fx_final_scale, intro_ease)
+	keycard_fx_rect.modulate.a = (0.72 + 0.12 * sin(keycard_fx_timer * 6.0)) * intro_ease * fade_alpha
+	if keycard_fx_icon != null and keycard_fx_icon.visible:
+		keycard_fx_icon.scale = Vector2.ONE * lerpf(0.0, keycard_fx_icon_final_scale, intro_ease)
+		keycard_fx_icon.modulate.a = intro_ease * fade_alpha
 	if keycard_fx_timer >= keycard_fx_duration:
 		keycard_fx_active = false
 		keycard_fx_rect.visible = false

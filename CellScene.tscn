@@ -523,64 +523,63 @@ monitoring = false
 shape = SubResource("CircleShape2D_doctor_disguise")
 
 [node name="StorageRoom" type="Node2D" parent="." unique_id=1567991021]
+z_index = -10
 
 [node name="StorageFloor" type="Polygon2D" parent="StorageRoom" unique_id=1199118229]
 texture_repeat = 2
-position = Vector2(295, 10)
+position = Vector2(286, 225)
 color = Color(1, 1, 1, 0.48)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -3440, -760, -3440)
 
 [node name="StorageWallTop" type="Polygon2D" parent="StorageRoom" unique_id=1387782931]
-position = Vector2(295, 10)
+position = Vector2(286, 225)
 color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -4336, -760, -4336)
 
 [node name="StorageWallBottom" type="Polygon2D" parent="StorageRoom" unique_id=172358890]
-position = Vector2(295, 10)
+position = Vector2(286, 225)
 color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(-760, -3504, 860, -3504, 860, -3440, -760, -3440)
 
 [node name="StorageWallLeft" type="Polygon2D" parent="StorageRoom" unique_id=188403921]
-position = Vector2(295, 10)
+position = Vector2(286, 225)
 color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
 [node name="StorageWallRight" type="Polygon2D" parent="StorageRoom" unique_id=113900722]
-position = Vector2(295, 10)
+position = Vector2(286, 225)
 color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(796, -4400, 860, -4400, 860, -3440, 796, -3440)
 
 [node name="StorageRoomWalls" type="StaticBody2D" parent="StorageRoom" unique_id=1870041322]
 
 [node name="Top" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=193228910]
-position = Vector2(293, 11)
-polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -4336, -593.4353, -4336, -760, -4336)
+position = Vector2(283, 246)
+polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -4336, -760, -4336)
 
 [node name="Bottom" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=1721231009]
-position = Vector2(284, 0)
+position = Vector2(283, 246)
 polygon = PackedVector2Array(-760, -3504, 860, -3504, 860, -3440, -760, -3440)
 
 [node name="Left" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=948164983]
-position = Vector2(293, 29)
+position = Vector2(283, 246)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
 [node name="Right" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=486805047]
-position = Vector2(285, -8)
+position = Vector2(283, 246)
 polygon = PackedVector2Array(796, -4400, 860, -4400, 860, -3440, 796, -3440)
 
 [node name="StorageReturnDoor" type="Area2D" parent="StorageRoom" unique_id=56047112]
-position = Vector2(995, -3910)
+position = Vector2(986, -3695)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageReturnDoor" unique_id=355987130]
-position = Vector2(83, 80)
 shape = SubResource("CircleShape2D_story_trigger")
 
 [node name="Marker" type="Polygon2D" parent="StorageRoom/StorageReturnDoor" unique_id=931194411]
-position = Vector2(87, 85)
 color = Color(0.86, 0.67, 0.15, 1)
-polygon = PackedVector2Array(-8, -45, 8, -45, 8, 45, -8, 45, -8, -5.581421)
+polygon = PackedVector2Array(-8, -45, 8, -45, 8, 45, -8, 45)
 
 [node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
 

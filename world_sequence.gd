@@ -57,12 +57,12 @@ const KEY_IMAGE_EXTENSIONS := ["png", "webp", "jpg", "jpeg"]
 const CHECKPOINT_CELL_POSITION := Vector2(500, 400)
 const CHECKPOINT_DOCTOR_POSITION := Vector2(3920, -4920)
 const CHECKPOINT_PRE_SURGERY_POSITION := Vector2(5240, -5080)
-const CHECKPOINT_STORAGE_POSITION := Vector2(1220, -3820)
+const CHECKPOINT_STORAGE_POSITION := Vector2(520, -3920)
 const CUE_TWO_PICKUP_POSITION := Vector2(5520, -5080)
 const CUE_THREE_PICKUP_POSITION := Vector2(4960, -5200) # Staff Room desk
 const STORAGE_DOOR_POSITION := Vector2(1168, -3820) # Hallway wall gateway to storage area
 const STORAGE_ENTRY_POSITION := Vector2(700, -3920)
-const STORAGE_RETURN_POSITION := Vector2(1220, -3820)
+const STORAGE_RETURN_POSITION := Vector2(1280, -3820)
 const STORAGE_CUE_FOUR_POSITION := Vector2(460, -4040)
 const STORAGE_BOX_POSITION := Vector2(120, -3920)
 
@@ -969,8 +969,7 @@ func _handle_storage_door_interaction() -> bool:
 		if Input.is_action_just_pressed("interact"):
 			storage_unlocked = true
 			_update_storage_door_visibility()
-			player.global_position = STORAGE_ENTRY_POSITION
-			dialogue_label.text = "Storage unlocked.\n\n[Press E]"
+			dialogue_label.text = "Storage unlocked. Press E to enter."
 	else:
 		dialogue_label.text = "Storage door locked. Need Blue Card."
 	return true

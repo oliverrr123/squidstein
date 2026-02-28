@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://cwkcy43ghi7x8" path="res://player.gd" id="1_player_script"]
 [ext_resource type="Script" uid="uid://c236u2qaywy5h" path="res://world_sequence.gd" id="3_world_script"]
 [ext_resource type="AudioStream" uid="uid://cs7i0ihk3rmlo" path="res://song.mp3" id="4_music"]
+[ext_resource type="Texture2D" uid="uid://ucg72flw4l6f" path="res://floor.webp" id="5_floor_tex"]
+[ext_resource type="Texture2D" uid="uid://dhn8k28k8glas" path="res://guy.png" id="6_guy_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -83,7 +85,7 @@ size = Vector2(64, 480)
 size = Vector2(64, 160)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
-size = Vector2(40, 40)
+size = Vector2(33, 40)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_story_trigger"]
 radius = 90.0
@@ -91,13 +93,19 @@ radius = 90.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_guard"]
 size = Vector2(40, 40)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_doctor_disguise"]
+radius = 110.0
+
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
 
 [node name="Blockout" type="Node2D" parent="." unique_id=1470356792]
 
 [node name="CellFloor" type="Polygon2D" parent="Blockout" unique_id=1321334500]
-color = Color(0.34, 0.34, 0.36, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(0, 0, 1200, 0, 1200, 800, 0, 800)
 
 [node name="CellWallTop" type="Polygon2D" parent="Blockout" unique_id=1371382730]
@@ -125,7 +133,10 @@ color = Color(0.86, 0.67, 0.15, 1)
 polygon = PackedVector2Array(1136, 330, 1200, 330, 1200, 470, 1136, 470)
 
 [node name="HallwayFloor" type="Polygon2D" parent="Blockout" unique_id=90678896]
-color = Color(0.3, 0.3, 0.32, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1200, 0, 1520, 0, 1520, 800, 1200, 800)
 
 [node name="HallwayWallBottom" type="Polygon2D" parent="Blockout" unique_id=2138683989]
@@ -133,7 +144,10 @@ color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(1200, 736, 1520, 736, 1520, 800, 1200, 800)
 
 [node name="HallwayUpFloor" type="Polygon2D" parent="Blockout" unique_id=1854618484]
-color = Color(0.3, 0.3, 0.32, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1200, -5000, 1520, -5000, 1520, 0, 1200, 0)
 
 [node name="HallwayUpWallLeft" type="Polygon2D" parent="Blockout" unique_id=1463189611]
@@ -149,7 +163,10 @@ color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(1520, -2880, 1584, -2880, 1584, 0, 1520, 0)
 
 [node name="Turn1Floor" type="Polygon2D" parent="Blockout" unique_id=942257413]
-color = Color(0.3, 0.3, 0.32, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1520, -3200, 3120, -3200, 3120, -2880, 1520, -2880)
 
 [node name="Turn1TopWall" type="Polygon2D" parent="Blockout" unique_id=2084586579]
@@ -165,7 +182,10 @@ color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(1520, -2880, 3120, -2880, 3120, -2848.897, 3120, -2816, 1520, -2816)
 
 [node name="TurnVerticalFloor" type="Polygon2D" parent="Blockout" unique_id=1661107837]
-color = Color(0.3, 0.3, 0.32, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(2800, -5000, 3120, -5000, 3120, -2880, 2800, -2880)
 
 [node name="TurnVerticalWallLeft" type="Polygon2D" parent="Blockout" unique_id=310808899]
@@ -181,7 +201,10 @@ color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(3120, -4680, 3184, -4680, 3184, -2880, 3120, -2880)
 
 [node name="Turn2Floor" type="Polygon2D" parent="Blockout" unique_id=281082414]
-color = Color(0.3, 0.3, 0.32, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(3120, -5000, 3440, -5000, 3440, -4680, 3120, -4680)
 
 [node name="Turn2TopWall" type="Polygon2D" parent="Blockout" unique_id=1435992996]
@@ -195,7 +218,10 @@ color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(3120, -4680, 3440, -4680, 3440, -4616, 3120, -4616)
 
 [node name="EndRoomFloor" type="Polygon2D" parent="Blockout" unique_id=33589733]
-color = Color(0.34, 0.34, 0.36, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(3440, -5480, 4640, -5480, 4640, -4680, 3440, -4680)
 
 [node name="EndRoomBedBase" type="Polygon2D" parent="Blockout" unique_id=276300762]
@@ -231,7 +257,10 @@ color = Color(0.86, 0.67, 0.15, 1)
 polygon = PackedVector2Array(3440, -5000, 3504, -5000, 3504, -4840, 3440, -4840)
 
 [node name="HallFloor" type="Polygon2D" parent="Blockout" unique_id=1073731529]
-color = Color(0.34, 0.34, 0.36, 1)
+texture_repeat = 2
+color = Color(1, 1, 1, 0.5)
+texture = ExtResource("5_floor_tex")
+texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1520, 0, 2720, 0, 2720, 800, 1520, 800)
 
 [node name="HallWallTop" type="Polygon2D" parent="Blockout" unique_id=1718559628]
@@ -376,11 +405,14 @@ shape = SubResource("RectangleShape2D_end_room_left_lower")
 position = Vector2(500, 400)
 script = ExtResource("1_player_script")
 
-[node name="PlaceholderCube" type="Polygon2D" parent="Player" unique_id=1969951438]
-color = Color(0.2, 0.85, 0.35, 1)
-polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+[node name="PlaceholderCube" type="Sprite2D" parent="Player" unique_id=1969951438]
+position = Vector2(0.9999895, -3.9999971)
+scale = Vector2(0.16033329, 0.16033329)
+texture = ExtResource("6_guy_tex")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=483166596]
+position = Vector2(-0.5, 0)
+scale = Vector2(2, 2)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1710502020]
@@ -415,6 +447,13 @@ position = Vector2(4470, -5080)
 color = Color(0.95, 0.95, 1, 1)
 polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
 
+[node name="DoctorDisguiseArea" type="Area2D" parent="." unique_id=1709120339]
+position = Vector2(4240, -5080)
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DoctorDisguiseArea" unique_id=740298905]
+shape = SubResource("CircleShape2D_doctor_disguise")
+
 [node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
 
 [node name="Panel" type="Panel" parent="DialogueUI" unique_id=1916797272]
@@ -433,6 +472,56 @@ theme_override_font_sizes/font_size = 28
 text = "Dialogue"
 autowrap_mode = 3
 
+[node name="MinigameUI" type="CanvasLayer" parent="." unique_id=500443876]
+
+[node name="Panel" type="Panel" parent="MinigameUI" unique_id=2001729907]
+offset_left = 560.0
+offset_top = 70.0
+offset_right = 1360.0
+offset_bottom = 240.0
+
+[node name="PromptLabel" type="Label" parent="MinigameUI/Panel" unique_id=2128669003]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 20.0
+offset_right = 770.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 30
+text = "Press E when marker hits the green zone"
+horizontal_alignment = 1
+
+[node name="HitsLabel" type="Label" parent="MinigameUI/Panel" unique_id=1162700395]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 95.0
+offset_right = 770.0
+offset_bottom = 128.0
+theme_override_font_sizes/font_size = 24
+text = "Resist: 0/5"
+horizontal_alignment = 1
+
+[node name="TimingLine" type="ColorRect" parent="MinigameUI/Panel" unique_id=1802169530]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 135.0
+offset_right = 750.0
+offset_bottom = 155.0
+color = Color(0.2, 0.2, 0.24, 1)
+
+[node name="TargetZone" type="ColorRect" parent="MinigameUI/Panel/TimingLine" unique_id=1258585219]
+layout_mode = 0
+offset_left = 280.0
+offset_right = 406.0
+offset_bottom = 20.0
+color = Color(0.2, 0.85, 0.35, 1)
+
+[node name="Needle" type="ColorRect" parent="MinigameUI/Panel/TimingLine" unique_id=1466223274]
+layout_mode = 0
+offset_left = 342.0
+offset_top = -6.0
+offset_right = 358.0
+offset_bottom = 26.0
+color = Color(0.95, 0.2, 0.2, 1)
+
 [node name="Music" type="AudioStreamPlayer" parent="." unique_id=1102892000]
 stream = ExtResource("4_music")
-autoplay = true

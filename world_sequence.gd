@@ -22,7 +22,7 @@ extends Node2D
 @onready var needle: ColorRect = $MinigameUI/Panel/TimingLine/Needle
 
 @export var guard_speed := 300.0
-@export var guard_escort_speed := 420.0
+@export var guard_escort_speed := 470.0
 @export var npc_follow_speed := 240.0
 @export var doctor_speed := 180.0
 const GUARD_SPAWN_POSITION := Vector2(1360, -700)

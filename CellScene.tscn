@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://bdw3v8ubheqjx" path="res://prisoner.png" id="10_prisoner_tex"]
 [ext_resource type="Texture2D" uid="uid://ckceaorxnwden" path="res://bed.jpg" id="10_qa2ai"]
 [ext_resource type="Texture2D" uid="uid://dlyku8s33sksw" path="res://chair.png" id="11_sax3l"]
+[ext_resource type="Texture2D" uid="uid://8wkpamx3ovxc" path="res://hospital_floor.png" id="12_hospital_floor_tex"]
 [ext_resource type="Texture2D" uid="uid://chdc6ff4ig08t" path="res://anesthesiometer.png" id="13_obyqa"]
 [ext_resource type="Texture2D" uid="uid://drbmmsmrags5m" path="res://drip.png" id="14_pr1b6"]
 [ext_resource type="Texture2D" uid="uid://imhjso6mcgvw" path="res://tooltable.png" id="15_gi4ji"]
@@ -253,8 +254,8 @@ polygon = PackedVector2Array(3120, -4680, 3440, -4680, 3440, -4616, 3120, -4616)
 [node name="EndRoomFloor" type="Polygon2D" parent="Blockout" unique_id=33589733]
 texture_repeat = 2
 color = Color(1, 1, 1, 0.5)
-texture = ExtResource("5_floor_tex")
-texture_scale = Vector2(2, 2)
+texture = ExtResource("12_hospital_floor_tex")
+texture_scale = Vector2(4, 4)
 polygon = PackedVector2Array(3440, -5480, 4640, -5480, 4640, -4680, 3440, -4680)
 
 [node name="EndRoomBedBase" type="Sprite2D" parent="Blockout" unique_id=276300762]
@@ -303,8 +304,8 @@ polygon = PackedVector2Array(3440, -5000, 3504, -5000, 3504, -4840, 3440, -4840)
 [node name="PreSurgeryRoomFloor" type="Polygon2D" parent="Blockout" unique_id=934117760]
 texture_repeat = 2
 color = Color(1, 1, 1, 0.5)
-texture = ExtResource("5_floor_tex")
-texture_scale = Vector2(2, 2)
+texture = ExtResource("12_hospital_floor_tex")
+texture_scale = Vector2(4, 4)
 polygon = PackedVector2Array(4640, -5480, 5840, -5480, 5840, -4680, 4640, -4680)
 
 [node name="PreSurgeryRoomWallTop" type="Polygon2D" parent="Blockout" unique_id=1394287336]

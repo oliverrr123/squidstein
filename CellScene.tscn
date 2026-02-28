@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://ck1bqik2goep6"]
 
 [ext_resource type="Script" uid="uid://cwkcy43ghi7x8" path="res://player.gd" id="1_player_script"]
-[ext_resource type="Script" path="res://world_sequence.gd" id="3_world_script"]
+[ext_resource type="Script" uid="uid://c236u2qaywy5h" path="res://world_sequence.gd" id="3_world_script"]
+[ext_resource type="AudioStream" uid="uid://cs7i0ihk3rmlo" path="res://song.mp3" id="4_music"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -18,10 +19,37 @@ size = Vector2(64, 330)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_right_lower"]
 size = Vector2(64, 330)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_top"]
-size = Vector2(320, 64)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_door_lock"]
+size = Vector2(64, 140)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_bottom"]
+size = Vector2(320, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_up_left"]
+size = Vector2(64, 5000)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_up_right"]
+size = Vector2(64, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_up_right_lower"]
+size = Vector2(64, 2880)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn1_top"]
+size = Vector2(1344, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn1_bottom"]
+size = Vector2(1664, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn_vertical_left"]
+size = Vector2(64, 1864)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn_vertical_right_lower"]
+size = Vector2(64, 1864)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn2_top"]
+size = Vector2(640, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_turn2_bottom"]
 size = Vector2(320, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hall_top"]
@@ -39,17 +67,29 @@ size = Vector2(64, 330)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hall_left_lower"]
 size = Vector2(64, 330)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_up_left"]
-size = Vector2(64, 5000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_end_room_top"]
+size = Vector2(1200, 64)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_up_right"]
-size = Vector2(64, 5000)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_end_room_bottom"]
+size = Vector2(1200, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_end_room_right"]
+size = Vector2(64, 800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_end_room_left_upper"]
+size = Vector2(64, 480)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_end_room_left_lower"]
+size = Vector2(64, 160)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(40, 40)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_story_trigger"]
 radius = 90.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_guard"]
+size = Vector2(40, 40)
 
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
@@ -92,17 +132,103 @@ polygon = PackedVector2Array(1200, 0, 1520, 0, 1520, 800, 1200, 800)
 color = Color(0.07, 0.08, 0.12, 1)
 polygon = PackedVector2Array(1200, 736, 1520, 736, 1520, 800, 1200, 800)
 
-[node name="HallwayUpFloor" type="Polygon2D" parent="Blockout"]
+[node name="HallwayUpFloor" type="Polygon2D" parent="Blockout" unique_id=1854618484]
 color = Color(0.3, 0.3, 0.32, 1)
 polygon = PackedVector2Array(1200, -5000, 1520, -5000, 1520, 0, 1200, 0)
 
-[node name="HallwayUpWallLeft" type="Polygon2D" parent="Blockout"]
+[node name="HallwayUpWallLeft" type="Polygon2D" parent="Blockout" unique_id=1463189611]
 color = Color(0.07, 0.08, 0.12, 1)
-polygon = PackedVector2Array(1200, -5000, 1264, -5000, 1264, 0, 1200, 0)
+polygon = PackedVector2Array(1136, -5000, 1200, -5000, 1200, 0, 1136, 0)
 
-[node name="HallwayUpWallRight" type="Polygon2D" parent="Blockout"]
+[node name="HallwayUpWallRight" type="Polygon2D" parent="Blockout" unique_id=1054185286]
 color = Color(0.07, 0.08, 0.12, 1)
-polygon = PackedVector2Array(1456, -5000, 1520, -5000, 1520, 0, 1456, 0)
+polygon = PackedVector2Array(1520, -5000, 1584, -5000, 1584, -3200, 1520, -3200)
+
+[node name="HallwayUpWallRightLower" type="Polygon2D" parent="Blockout" unique_id=428313890]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(1520, -2880, 1584, -2880, 1584, 0, 1520, 0)
+
+[node name="Turn1Floor" type="Polygon2D" parent="Blockout" unique_id=942257413]
+color = Color(0.3, 0.3, 0.32, 1)
+polygon = PackedVector2Array(1520, -3200, 3120, -3200, 3120, -2880, 1520, -2880)
+
+[node name="Turn1TopWall" type="Polygon2D" parent="Blockout" unique_id=2084586579]
+position = Vector2(243.19986, 0)
+scale = Vector2(0.8400001, 1)
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(1520, -3264, 3120, -3264, 3120, -3200, 1520, -3200)
+
+[node name="Turn1BottomWall" type="Polygon2D" parent="Blockout" unique_id=619129681]
+position = Vector2(-60.799927, 0)
+scale = Vector2(1.04, 1)
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(1520, -2880, 3120, -2880, 3120, -2848.897, 3120, -2816, 1520, -2816)
+
+[node name="TurnVerticalFloor" type="Polygon2D" parent="Blockout" unique_id=1661107837]
+color = Color(0.3, 0.3, 0.32, 1)
+polygon = PackedVector2Array(2800, -5000, 3120, -5000, 3120, -2880, 2800, -2880)
+
+[node name="TurnVerticalWallLeft" type="Polygon2D" parent="Blockout" unique_id=310808899]
+position = Vector2(0, -667.77344)
+scale = Vector2(1, 0.8792453)
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(2800, -5000, 2864, -5000, 2864, -2880, 2800, -2880)
+
+[node name="TurnVerticalWallRightLower" type="Polygon2D" parent="Blockout" unique_id=1927964143]
+position = Vector2(0, 166.3999)
+scale = Vector2(1, 1.0355556)
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3120, -4680, 3184, -4680, 3184, -2880, 3120, -2880)
+
+[node name="Turn2Floor" type="Polygon2D" parent="Blockout" unique_id=281082414]
+color = Color(0.3, 0.3, 0.32, 1)
+polygon = PackedVector2Array(3120, -5000, 3440, -5000, 3440, -4680, 3120, -4680)
+
+[node name="Turn2TopWall" type="Polygon2D" parent="Blockout" unique_id=1435992996]
+position = Vector2(-3440, 0)
+scale = Vector2(2, 1)
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3120, -5064, 3440, -5064, 3440, -5000, 3120, -5000)
+
+[node name="Turn2BottomWall" type="Polygon2D" parent="Blockout" unique_id=169609022]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3120, -4680, 3440, -4680, 3440, -4616, 3120, -4616)
+
+[node name="EndRoomFloor" type="Polygon2D" parent="Blockout" unique_id=33589733]
+color = Color(0.34, 0.34, 0.36, 1)
+polygon = PackedVector2Array(3440, -5480, 4640, -5480, 4640, -4680, 3440, -4680)
+
+[node name="EndRoomBedBase" type="Polygon2D" parent="Blockout" unique_id=276300762]
+color = Color(0.58, 0.58, 0.6, 1)
+polygon = PackedVector2Array(4100, -5160, 4480, -5160, 4480, -5000, 4100, -5000)
+
+[node name="EndRoomBedPillow" type="Polygon2D" parent="Blockout" unique_id=903255813]
+color = Color(0.88, 0.88, 0.9, 1)
+polygon = PackedVector2Array(4380, -5148, 4470, -5148, 4470, -5012, 4380, -5012)
+
+[node name="EndRoomWallTop" type="Polygon2D" parent="Blockout" unique_id=1644941412]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3440, -5480, 4640, -5480, 4640, -5416, 3440, -5416)
+
+[node name="EndRoomWallBottom" type="Polygon2D" parent="Blockout" unique_id=507564894]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3440, -4680, 4640, -4680, 4640, -4616, 3440, -4616)
+
+[node name="EndRoomWallRight" type="Polygon2D" parent="Blockout" unique_id=636407341]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(4576, -5480, 4640, -5480, 4640, -4680, 4576, -4680)
+
+[node name="EndRoomWallLeftUpper" type="Polygon2D" parent="Blockout" unique_id=1155759425]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3440, -5480, 3504, -5480, 3504, -5000, 3440, -5000)
+
+[node name="EndRoomWallLeftLower" type="Polygon2D" parent="Blockout" unique_id=32048103]
+color = Color(0.07, 0.08, 0.12, 1)
+polygon = PackedVector2Array(3440, -4840, 3504, -4840, 3504, -4680, 3440, -4680)
+
+[node name="EndRoomDoorLintel" type="Polygon2D" parent="Blockout" unique_id=1423944851]
+color = Color(0.86, 0.67, 0.15, 1)
+polygon = PackedVector2Array(3440, -5000, 3504, -5000, 3504, -4840, 3440, -4840)
 
 [node name="HallFloor" type="Polygon2D" parent="Blockout" unique_id=1073731529]
 color = Color(0.34, 0.34, 0.36, 1)
@@ -154,19 +280,53 @@ shape = SubResource("RectangleShape2D_cell_right_upper")
 position = Vector2(1168, 635)
 shape = SubResource("RectangleShape2D_cell_right_lower")
 
+[node name="CellDoorLock" type="StaticBody2D" parent="." unique_id=439733855]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CellDoorLock" unique_id=1397104807]
+position = Vector2(1168, 400)
+shape = SubResource("RectangleShape2D_cell_door_lock")
+
 [node name="HallwayWalls" type="StaticBody2D" parent="." unique_id=1399527572]
 
 [node name="Bottom" type="CollisionShape2D" parent="HallwayWalls" unique_id=1817152943]
 position = Vector2(1360, 768)
 shape = SubResource("RectangleShape2D_hallway_bottom")
 
-[node name="UpLeft" type="CollisionShape2D" parent="HallwayWalls"]
-position = Vector2(1232, -2500)
+[node name="UpLeft" type="CollisionShape2D" parent="HallwayWalls" unique_id=65153168]
+position = Vector2(1168, -2500)
 shape = SubResource("RectangleShape2D_hallway_up_left")
 
-[node name="UpRight" type="CollisionShape2D" parent="HallwayWalls"]
-position = Vector2(1488, -2500)
+[node name="UpRight" type="CollisionShape2D" parent="HallwayWalls" unique_id=1285203971]
+position = Vector2(1552, -4100)
 shape = SubResource("RectangleShape2D_hallway_up_right")
+
+[node name="UpRightLower" type="CollisionShape2D" parent="HallwayWalls" unique_id=1409155212]
+position = Vector2(1552, -1440)
+shape = SubResource("RectangleShape2D_hallway_up_right_lower")
+
+[node name="Turn1Top" type="CollisionShape2D" parent="HallwayWalls" unique_id=1631257299]
+position = Vector2(2192, -3232)
+shape = SubResource("RectangleShape2D_turn1_top")
+
+[node name="Turn1Bottom" type="CollisionShape2D" parent="HallwayWalls" unique_id=1851324240]
+position = Vector2(2352, -2848)
+shape = SubResource("RectangleShape2D_turn1_bottom")
+
+[node name="TurnVerticalLeft" type="CollisionShape2D" parent="HallwayWalls" unique_id=70021864]
+position = Vector2(2832, -4132)
+shape = SubResource("RectangleShape2D_turn_vertical_left")
+
+[node name="TurnVerticalRightLower" type="CollisionShape2D" parent="HallwayWalls" unique_id=313668905]
+position = Vector2(3152, -3748)
+shape = SubResource("RectangleShape2D_turn_vertical_right_lower")
+
+[node name="Turn2Top" type="CollisionShape2D" parent="HallwayWalls" unique_id=999345252]
+position = Vector2(3120, -5032)
+shape = SubResource("RectangleShape2D_turn2_top")
+
+[node name="Turn2Bottom" type="CollisionShape2D" parent="HallwayWalls" unique_id=2001423790]
+position = Vector2(3280, -4648)
+shape = SubResource("RectangleShape2D_turn2_bottom")
 
 [node name="HallWalls" type="StaticBody2D" parent="." unique_id=1870181901]
 
@@ -190,6 +350,28 @@ shape = SubResource("RectangleShape2D_hall_left_upper")
 position = Vector2(1552, 635)
 shape = SubResource("RectangleShape2D_hall_left_lower")
 
+[node name="EndRoomWalls" type="StaticBody2D" parent="." unique_id=559944289]
+
+[node name="Top" type="CollisionShape2D" parent="EndRoomWalls" unique_id=549916958]
+position = Vector2(4040, -5448)
+shape = SubResource("RectangleShape2D_end_room_top")
+
+[node name="Bottom" type="CollisionShape2D" parent="EndRoomWalls" unique_id=962736943]
+position = Vector2(4040, -4648)
+shape = SubResource("RectangleShape2D_end_room_bottom")
+
+[node name="Right" type="CollisionShape2D" parent="EndRoomWalls" unique_id=1890838313]
+position = Vector2(4608, -5080)
+shape = SubResource("RectangleShape2D_end_room_right")
+
+[node name="LeftUpper" type="CollisionShape2D" parent="EndRoomWalls" unique_id=1374010053]
+position = Vector2(3472, -5240)
+shape = SubResource("RectangleShape2D_end_room_left_upper")
+
+[node name="LeftLower" type="CollisionShape2D" parent="EndRoomWalls" unique_id=1211783087]
+position = Vector2(3472, -4760)
+shape = SubResource("RectangleShape2D_end_room_left_lower")
+
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1850019650 groups=["player"]]
 position = Vector2(500, 400)
 script = ExtResource("1_player_script")
@@ -202,41 +384,55 @@ polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
 shape = SubResource("RectangleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1710502020]
-enabled = true
 
-[node name="StoryTrigger" type="Area2D" parent="."]
+[node name="StoryTrigger" type="Area2D" parent="." unique_id=3251960]
 position = Vector2(1120, 400)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StoryTrigger"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StoryTrigger" unique_id=652550534]
 shape = SubResource("CircleShape2D_story_trigger")
 
 [node name="OtherGuy" type="Node2D" parent="." unique_id=1103155141]
-position = Vector2(2060, 400)
+position = Vector2(1800, 400)
 
-[node name="OtherGuyCube" type="Polygon2D" parent="OtherGuy"]
+[node name="OtherGuyCube" type="Polygon2D" parent="OtherGuy" unique_id=817480911]
 color = Color(0.15, 0.55, 0.95, 1)
 polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
 
-[node name="Guard" type="Node2D" parent="."]
+[node name="Guard" type="CharacterBody2D" parent="." unique_id=493819865]
 position = Vector2(1360, -620)
 
-[node name="GuardCube" type="Polygon2D" parent="Guard"]
+[node name="GuardCube" type="Polygon2D" parent="Guard" unique_id=1116291392]
 color = Color(0.9, 0.2, 0.2, 1)
 polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
 
-[node name="DialogueUI" type="CanvasLayer" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Guard" unique_id=904612331]
+shape = SubResource("RectangleShape2D_guard")
 
-[node name="Panel" type="Panel" parent="DialogueUI"]
+[node name="Doctor" type="Node2D" parent="." unique_id=1662555695]
+position = Vector2(4470, -5080)
+
+[node name="DoctorCube" type="Polygon2D" parent="Doctor" unique_id=369317786]
+color = Color(0.95, 0.95, 1, 1)
+polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+
+[node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
+
+[node name="Panel" type="Panel" parent="DialogueUI" unique_id=1916797272]
 offset_left = 100.0
 offset_top = 800.0
 offset_right = 1820.0
 offset_bottom = 1030.0
 
-[node name="DialogueText" type="Label" parent="DialogueUI/Panel"]
+[node name="DialogueText" type="Label" parent="DialogueUI/Panel" unique_id=1563717555]
+layout_mode = 0
 offset_left = 28.0
 offset_top = 20.0
 offset_right = 1690.0
 offset_bottom = 196.0
 theme_override_font_sizes/font_size = 28
-autowrap_mode = 3
 text = "Dialogue"
+autowrap_mode = 3
+
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=1102892000]
+stream = ExtResource("4_music")
+autoplay = true

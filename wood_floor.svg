@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#5a3a22"/>
+  <g fill="#b88452">
+    <rect x="0" y="0" width="56" height="512"/>
+    <rect x="68" y="0" width="72" height="512"/>
+    <rect x="154" y="0" width="60" height="512"/>
+    <rect x="228" y="0" width="78" height="512"/>
+    <rect x="318" y="0" width="62" height="512"/>
+    <rect x="392" y="0" width="74" height="512"/>
+    <rect x="478" y="0" width="34" height="512"/>
+  </g>
+  <g stroke="#7b5231" stroke-width="3" opacity="0.65">
+    <line x1="14" y1="0" x2="20" y2="512"/>
+    <line x1="38" y1="0" x2="34" y2="512"/>
+    <line x1="96" y1="0" x2="88" y2="512"/>
+    <line x1="126" y1="0" x2="132" y2="512"/>
+    <line x1="176" y1="0" x2="170" y2="512"/>
+    <line x1="198" y1="0" x2="206" y2="512"/>
+    <line x1="248" y1="0" x2="256" y2="512"/>
+    <line x1="286" y1="0" x2="278" y2="512"/>
+    <line x1="340" y1="0" x2="350" y2="512"/>
+    <line x1="370" y1="0" x2="362" y2="512"/>
+    <line x1="424" y1="0" x2="432" y2="512"/>
+    <line x1="456" y1="0" x2="448" y2="512"/>
+    <line x1="496" y1="0" x2="504" y2="512"/>
+  </g>
+</svg>

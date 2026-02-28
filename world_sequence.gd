@@ -60,11 +60,12 @@ const CHECKPOINT_PRE_SURGERY_POSITION := Vector2(5240, -5080)
 const CHECKPOINT_STORAGE_POSITION := Vector2(520, -3920)
 const CUE_TWO_PICKUP_POSITION := Vector2(5520, -5080)
 const CUE_THREE_PICKUP_POSITION := Vector2(4960, -5200) # Staff Room desk
-const STORAGE_DOOR_POSITION := Vector2(1168, -3820) # Hallway wall gateway to storage area
-const STORAGE_ENTRY_POSITION := Vector2(700, -3920)
-const STORAGE_RETURN_POSITION := Vector2(1280, -3820)
+const STORAGE_DOOR_POSITION := Vector2(1168, -3920) # Hallway wall gateway to storage area
+const STORAGE_DOOR_INTERACT_HALF_WIDTH := 220.0
+const STORAGE_DOOR_INTERACT_HALF_HEIGHT := 260.0
 const STORAGE_CUE_FOUR_POSITION := Vector2(460, -4040)
 const STORAGE_BOX_POSITION := Vector2(120, -3920)
+const CUE_FIVE_INVOICE_TEXT := "Invoice (Cue 5):\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
 
 enum SequenceState {
 	IDLE,
@@ -152,9 +153,14 @@ var key_hud_icon: TextureRect
 var key_hud_label: Label
 var key_hud_fallback_textures: Array[Texture2D] = []
 var cue_collected: Array[bool] = []
+var cue_notes: Dictionary = {}
 var latest_collected_cue_index := 0
 var inventory_layer: CanvasLayer
+var inventory_panel: Panel
 var inventory_slots: Array[TextureRect] = []
+var inventory_hover_panel: Panel
+var inventory_hover_label: Label
+var hovered_inventory_index := -1
 var cue_two_pickup: Area2D
 var cue_two_sprite: Sprite2D
 var cue_two_in_range := false
@@ -164,8 +170,6 @@ var cue_three_in_range := false
 var cue_four_pickup: Area2D
 var cue_four_sprite: Sprite2D
 var cue_four_in_range := false
-@onready var storage_exit_area: Area2D = $StorageRoom/StorageReturnDoor
-var storage_exit_in_range := false
 var storage_box_area: Area2D
 var storage_box_sprite: Sprite2D
 var storage_box_in_range := false
@@ -215,12 +219,11 @@ func _ready() -> void:
 	trigger_area.body_entered.connect(_on_story_trigger_body_entered)
 	disguise_area.body_entered.connect(_on_disguise_area_body_entered)
 	disguise_area.body_exited.connect(_on_disguise_area_body_exited)
-	storage_exit_area.body_entered.connect(_on_storage_exit_body_entered)
-	storage_exit_area.body_exited.connect(_on_storage_exit_body_exited)
 	_restart_from_checkpoint(0)
 
 func _physics_process(delta: float) -> void:
 	_update_keycard_fx(delta)
+	_update_inventory_visibility()
 	_handle_checkpoint_cheat_input()
 	match state:
 		SequenceState.DIALOGUE:
@@ -563,8 +566,6 @@ func _handle_disguise_interaction() -> void:
 		return
 	if _handle_storage_door_interaction():
 		return
-	if _handle_storage_exit_interaction():
-		return
 	if _handle_cue_four_interaction():
 		return
 	if _handle_storage_box_interaction():
@@ -743,19 +744,19 @@ func _setup_inventory_ui() -> void:
 	inventory_layer.layer = 40
 	add_child(inventory_layer)
 
-	var panel := Panel.new()
-	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	panel.offset_left = 220
-	panel.offset_right = -220
-	panel.offset_bottom = -14
-	panel.offset_top = -88
-	inventory_layer.add_child(panel)
+	inventory_panel = Panel.new()
+	inventory_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	inventory_panel.offset_left = 220
+	inventory_panel.offset_right = -220
+	inventory_panel.offset_bottom = -14
+	inventory_panel.offset_top = -88
+	inventory_layer.add_child(inventory_panel)
 
 	var row := HBoxContainer.new()
 	row.position = Vector2(14, 12)
 	row.size = Vector2(952, 50)
 	row.add_theme_constant_override("separation", 8)
-	panel.add_child(row)
+	inventory_panel.add_child(row)
 
 	for i in range(KEY_USE_MAX):
 		var slot := TextureRect.new()
@@ -763,11 +764,60 @@ func _setup_inventory_ui() -> void:
 		slot.size = Vector2(48, 48)
 		slot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		slot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		slot.mouse_filter = Control.MOUSE_FILTER_STOP
+		slot.mouse_entered.connect(_on_inventory_slot_mouse_entered.bind(i + 1))
+		slot.mouse_exited.connect(_on_inventory_slot_mouse_exited)
 		slot.modulate = Color(0.35, 0.35, 0.35, 0.85)
 		row.add_child(slot)
 		inventory_slots.append(slot)
 
+	inventory_hover_panel = Panel.new()
+	inventory_hover_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	inventory_hover_panel.offset_left = 120
+	inventory_hover_panel.offset_right = -120
+	inventory_hover_panel.offset_top = 70
+	inventory_hover_panel.offset_bottom = 330
+	inventory_hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tip_style := StyleBoxFlat.new()
+	tip_style.bg_color = Color(0.04, 0.04, 0.06, 0.92)
+	tip_style.border_color = Color(0.86, 0.67, 0.15, 0.9)
+	tip_style.border_width_left = 2
+	tip_style.border_width_top = 2
+	tip_style.border_width_right = 2
+	tip_style.border_width_bottom = 2
+	tip_style.corner_radius_top_left = 10
+	tip_style.corner_radius_top_right = 10
+	tip_style.corner_radius_bottom_left = 10
+	tip_style.corner_radius_bottom_right = 10
+	inventory_hover_panel.add_theme_stylebox_override("panel", tip_style)
+	inventory_hover_panel.visible = false
+	inventory_layer.add_child(inventory_hover_panel)
+
+	inventory_hover_label = Label.new()
+	inventory_hover_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inventory_hover_label.offset_left = 22
+	inventory_hover_label.offset_right = -22
+	inventory_hover_label.offset_top = 16
+	inventory_hover_label.offset_bottom = -16
+	inventory_hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inventory_hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inventory_hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	inventory_hover_label.add_theme_font_size_override("font_size", 28)
+	inventory_hover_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	inventory_hover_label.text = ""
+	inventory_hover_panel.add_child(inventory_hover_label)
+
 	_refresh_inventory_ui()
+	_update_inventory_visibility()
+
+func _update_inventory_visibility() -> void:
+	if inventory_panel == null:
+		return
+	# Keep clue text readable: hide bottom inventory when dialogue is open.
+	var show_hover := hovered_inventory_index > 0 and not dialogue_panel.visible
+	inventory_panel.visible = not dialogue_panel.visible
+	if inventory_hover_panel != null:
+		inventory_hover_panel.visible = show_hover
 
 func _refresh_inventory_ui() -> void:
 	for i in range(inventory_slots.size()):
@@ -776,15 +826,23 @@ func _refresh_inventory_ui() -> void:
 			slot.texture = _get_key_texture_for_uses(i + 1)
 			slot.modulate = Color(1, 1, 1, 1)
 			slot.visible = true
+			slot.mouse_filter = Control.MOUSE_FILTER_STOP
 		else:
 			slot.texture = null
 			slot.visible = false
+			slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if hovered_inventory_index > 0:
+		var idx := hovered_inventory_index - 1
+		if idx < 0 or idx >= cue_collected.size() or not cue_collected[idx]:
+			_on_inventory_slot_mouse_exited()
 
 func _set_cue_collected(index_1_based: int, collected: bool) -> void:
 	var idx := index_1_based - 1
 	if idx < 0 or idx >= cue_collected.size():
 		return
 	cue_collected[idx] = collected
+	if collected and not cue_notes.has(index_1_based):
+		cue_notes[index_1_based] = _get_default_cue_note(index_1_based)
 	if collected:
 		latest_collected_cue_index = index_1_based
 	elif latest_collected_cue_index == index_1_based:
@@ -795,6 +853,55 @@ func _set_cue_collected(index_1_based: int, collected: bool) -> void:
 				break
 	_refresh_inventory_ui()
 	_refresh_key_hud()
+
+func _on_inventory_slot_mouse_entered(index_1_based: int) -> void:
+	var idx := index_1_based - 1
+	if idx < 0 or idx >= cue_collected.size() or not cue_collected[idx]:
+		return
+	hovered_inventory_index = index_1_based
+	_apply_inventory_hover_text(_get_cue_note(index_1_based))
+	if inventory_hover_panel != null:
+		inventory_hover_panel.visible = not dialogue_panel.visible
+
+func _on_inventory_slot_mouse_exited() -> void:
+	hovered_inventory_index = -1
+	if inventory_hover_panel != null:
+		inventory_hover_panel.visible = false
+
+func _get_cue_note(index_1_based: int) -> String:
+	if cue_notes.has(index_1_based):
+		return String(cue_notes[index_1_based])
+	return _get_default_cue_note(index_1_based)
+
+func _get_default_cue_note(index_1_based: int) -> String:
+	match index_1_based:
+		1:
+			return "Cue 1 (Doctor ID): Security ID taken from the doctor. Opens restricted hospital doors."
+		2:
+			return "Cue 2 (Staff Room Record): People are listed as 'material' with a price tag."
+		3:
+			return "Cue 3 (Blue Card): Access card used to unlock the storage door."
+		4:
+			return "Cue 4 (Crowbar): Tool used to force open sealed crates and boxes."
+		5:
+			return CUE_FIVE_INVOICE_TEXT
+		_:
+			return "Cue %d: Collected evidence." % index_1_based
+
+func _apply_inventory_hover_text(text: String) -> void:
+	if inventory_hover_label == null or inventory_hover_panel == null:
+		return
+	inventory_hover_label.text = text
+	var line_count := text.count("\n") + 1
+	var font_size := 32
+	if line_count >= 7:
+		font_size = 22
+	elif line_count >= 5:
+		font_size = 26
+	inventory_hover_label.add_theme_font_size_override("font_size", font_size)
+	var target_height := clampi(int(round(line_count * (font_size * 1.45) + 48.0)), 220, 520)
+	inventory_hover_panel.offset_top = 70
+	inventory_hover_panel.offset_bottom = 70 + target_height
 
 func _get_collected_cue_count() -> int:
 	var count := 0
@@ -955,45 +1062,21 @@ func _update_storage_door_visibility() -> void:
 	_update_storage_box_visibility()
 
 func _handle_storage_door_interaction() -> bool:
-	if player.global_position.distance_to(STORAGE_DOOR_POSITION) > 110.0:
+	if storage_unlocked:
+		return false
+	var to_door := player.global_position - STORAGE_DOOR_POSITION
+	var near_door := absf(to_door.x) <= STORAGE_DOOR_INTERACT_HALF_WIDTH and absf(to_door.y) <= STORAGE_DOOR_INTERACT_HALF_HEIGHT
+	if not near_door:
 		return false
 	dialogue_panel.visible = true
-	if storage_unlocked:
-		dialogue_label.text = "Press E to enter Storage."
-		if Input.is_action_just_pressed("interact"):
-			player.global_position = STORAGE_ENTRY_POSITION
-			dialogue_panel.visible = false
-		return true
 	if cue_collected.size() > 2 and cue_collected[2]:
 		dialogue_label.text = "Press E to use Blue Card (Cue 3) on Storage door."
 		if Input.is_action_just_pressed("interact"):
 			storage_unlocked = true
 			_update_storage_door_visibility()
-			dialogue_label.text = "Storage unlocked. Press E to enter."
+			dialogue_label.text = "Storage unlocked."
 	else:
 		dialogue_label.text = "Storage door locked. Need Blue Card."
-	return true
-
-func _on_storage_exit_body_entered(body: Node2D) -> void:
-	if body != player:
-		return
-	storage_exit_in_range = true
-
-func _on_storage_exit_body_exited(body: Node2D) -> void:
-	if body != player:
-		return
-	storage_exit_in_range = false
-
-func _handle_storage_exit_interaction() -> bool:
-	if not storage_unlocked:
-		return false
-	if not storage_exit_in_range:
-		return false
-	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to return to hallway."
-	if Input.is_action_just_pressed("interact"):
-		player.global_position = STORAGE_RETURN_POSITION
-		dialogue_panel.visible = false
 	return true
 
 func _setup_cue_four_pickup() -> void:
@@ -1113,8 +1196,9 @@ func _handle_storage_box_interaction() -> bool:
 		dialogue_label.text = "Press E to use Crowbar (Cue 4) on the box."
 		if Input.is_action_just_pressed("interact"):
 			_set_cue_collected(5, true)
+			cue_notes[5] = CUE_FIVE_INVOICE_TEXT
 			_show_keycard_fx_for_cue(5)
-			dialogue_label.text = "Evidence found in the box (Cue 5).\n\n[Press E]"
+			dialogue_label.text = "%s\n\n[Press E]" % CUE_FIVE_INVOICE_TEXT
 	else:
 		dialogue_label.text = "Heavy box. You need a crowbar."
 	return true
@@ -1196,6 +1280,8 @@ func _restart_from_checkpoint(index: int) -> void:
 		# Full story reset (cell start).
 		has_keycard = false
 		key_uses = 0
+		cue_notes.clear()
+		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
 			cue_collected[i] = false
@@ -1222,6 +1308,8 @@ func _restart_from_checkpoint(index: int) -> void:
 		# Doctor checkpoint restart.
 		has_keycard = false
 		key_uses = 0
+		cue_notes.clear()
+		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
 			cue_collected[i] = false
@@ -1248,6 +1336,8 @@ func _restart_from_checkpoint(index: int) -> void:
 		# Pre-surgery checkpoint restart.
 		has_keycard = true
 		key_uses = 0
+		cue_notes.clear()
+		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
 			cue_collected[i] = false
@@ -1280,6 +1370,8 @@ func _restart_from_checkpoint(index: int) -> void:
 	# Storage checkpoint restart (after Cue 3).
 	has_keycard = true
 	key_uses = 0
+	cue_notes.clear()
+	hovered_inventory_index = -1
 	latest_collected_cue_index = 0
 	for i in range(cue_collected.size()):
 		cue_collected[i] = false

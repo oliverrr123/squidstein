@@ -207,7 +207,7 @@ var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
 var visibility_fx_layer: CanvasLayer
 var visibility_fx_rect: ColorRect
-var room_vision_enabled := false
+var room_vision_enabled := true
 var current_room_index := -1
 var pre_surgery_lock_default_layer := 0
 var pre_surgery_lock_default_mask := 0
@@ -260,6 +260,11 @@ func _ready() -> void:
 	disguise_area.body_entered.connect(_on_disguise_area_body_entered)
 	disguise_area.body_exited.connect(_on_disguise_area_body_exited)
 	_restart_from_checkpoint(0)
+	_update_visibility_fx()
+	call_deferred("_refresh_visibility_next_frame")
+
+func _refresh_visibility_next_frame() -> void:
+	_update_visibility_fx()
 
 func _physics_process(delta: float) -> void:
 	_update_keycard_fx(delta)
@@ -1622,6 +1627,7 @@ func _reset_to_checkpoint(index: int) -> void:
 	anesthesia_started = false
 	anesthesia_won = false
 	spam_progress = spam_required * 0.5
+	call_deferred("_refresh_visibility_next_frame")
 
 func _restart_from_checkpoint(index: int) -> void:
 	_reset_to_checkpoint(index)
@@ -1650,7 +1656,7 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	if index == 0:
 		# Full story reset (cell start).
-		room_vision_enabled = false
+		room_vision_enabled = true
 		has_keycard = false
 		key_uses = 0
 		cue_notes.clear()

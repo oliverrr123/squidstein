@@ -5,6 +5,7 @@
 [ext_resource type="AudioStream" uid="uid://cs7i0ihk3rmlo" path="res://song.mp3" id="4_music"]
 [ext_resource type="Texture2D" uid="uid://ucg72flw4l6f" path="res://floor.webp" id="5_floor_tex"]
 [ext_resource type="Texture2D" uid="uid://dhn8k28k8glas" path="res://guy.png" id="6_guy_tex"]
+[ext_resource type="Texture2D" uid="uid://cqxolsuq2chjx" path="res://doc.png" id="7_doc_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -443,9 +444,10 @@ shape = SubResource("RectangleShape2D_guard")
 [node name="Doctor" type="Node2D" parent="." unique_id=1662555695]
 position = Vector2(4470, -5080)
 
-[node name="DoctorCube" type="Polygon2D" parent="Doctor" unique_id=369317786]
-color = Color(0.95, 0.95, 1, 1)
-polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+[node name="DoctorCube" type="Sprite2D" parent="Doctor" unique_id=369317786]
+position = Vector2(0.9999895, -3.9999971)
+scale = Vector2(0.16033329, 0.16033329)
+texture = ExtResource("7_doc_tex")
 
 [node name="DoctorDisguiseArea" type="Area2D" parent="." unique_id=1709120339]
 position = Vector2(4240, -5080)

@@ -30,7 +30,8 @@ const BED_POSITION := Vector2(4240, -5080)
 const DOCTOR_TARGET_OFFSET := Vector2(0, 120)
 const DOCTOR_BED_POSITION := BED_POSITION
 const PLAYER_BED_SIDE_POSITION := BED_POSITION + Vector2(-130, 120)
-const DOCTOR_DISGUISE_TEXTURE := preload("res://doc.png")
+const DOCTOR_DISGUISE_TEXTURE := preload("res://doc_guy.png")
+const DOCTOR_FAINT_TEXTURE := preload("res://doc_switched.png")
 
 enum SequenceState {
 	IDLE,
@@ -236,7 +237,6 @@ func _physics_process(delta: float) -> void:
 			doctor.global_position = doctor.global_position.move_toward(DOCTOR_BED_POSITION, doctor_speed * delta)
 			if doctor.global_position.distance_to(DOCTOR_BED_POSITION) < 4.0:
 				doctor.global_position = DOCTOR_BED_POSITION
-				doctor_cube.modulate = Color(0.55, 0.55, 0.6, 1.0)
 				dialogue_panel.visible = false
 				disguise_area.set_deferred("monitoring", true)
 				player.set_physics_process(true)
@@ -472,5 +472,11 @@ func _wear_doctor_clothes() -> void:
 		player_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	else:
 		player_cube.modulate = Color(0.95, 0.95, 1.0, 1.0)
+	var doctor_sprite := doctor_cube as Sprite2D
+	if doctor_sprite != null:
+		doctor_sprite.texture = DOCTOR_FAINT_TEXTURE
+		doctor_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	else:
+		doctor_cube.modulate = Color(0.55, 0.55, 0.6, 1.0)
 	dialogue_panel.visible = true
 	dialogue_label.text = "You put on the doctor's clothes.\n\n[Press E]"

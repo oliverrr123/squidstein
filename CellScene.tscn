@@ -16,6 +16,16 @@
 [ext_resource type="Texture2D" uid="uid://chdc6ff4ig08t" path="res://anesthesiometer.png" id="13_obyqa"]
 [ext_resource type="Texture2D" uid="uid://drbmmsmrags5m" path="res://drip.png" id="14_pr1b6"]
 [ext_resource type="Texture2D" uid="uid://imhjso6mcgvw" path="res://tooltable.png" id="15_gi4ji"]
+[ext_resource type="Texture2D" uid="uid://b1ceyo8eyvc3j" path="res://clock.png" id="16_clock_tex"]
+[ext_resource type="Texture2D" uid="uid://d3cv2diojbbt4" path="res://bookshelf.png" id="17_bookshelf_tex"]
+[ext_resource type="Texture2D" uid="uid://mpjwnyt67m1g" path="res://cue11.png" id="18_cue11_tex"]
+[ext_resource type="Texture2D" uid="uid://txegduofpn5q" path="res://elevator.png" id="19_elevator_tex"]
+[ext_resource type="Texture2D" uid="uid://np8ie3ob3ser" path="res://box.png" id="20_box_tex"]
+[ext_resource type="Texture2D" uid="uid://bwc4t1v4dm2qc" path="res://196ce298c6745b97f8322f6e69189b69cd81b546a4f6b46719596b17612987c6.png" id="21_1wct6"]
+[ext_resource type="Texture2D" uid="uid://cse2nd38ekxtr" path="res://da97326e8b689fe878b985a25be09a374f0e040d135f768d683ca46fdc2daa2d.png" id="22_sjfai"]
+[ext_resource type="Texture2D" uid="uid://oh3pwyuit2nw" path="res://43170b6aa9baa8b110b0c553c948dae6b52a458b01955a164c74e28725e6bc3b.png" id="23_jxdyh"]
+[ext_resource type="Texture2D" uid="uid://cl6bc4e2eklh" path="res://eight.png" id="24_gallery_lock_tex"]
+[ext_resource type="Texture2D" uid="uid://qkssdax6c0th" path="res://7da8a2809475220fdc175a9f6064948791806bc588463b8e62a3b5b7e21e9fd8.png" id="26_63dio"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -125,6 +135,12 @@ size = Vector2(54, 81)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_doctor_disguise"]
 radius = 110.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_elevator_interact"]
+radius = 82.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_storage_box_interact"]
+radius = 82.0
 
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
@@ -600,6 +616,29 @@ polygon = PackedVector2Array(796, -4400, 860, -4400, 860, -4010, 796, -4010)
 [node name="RightLower" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=734119004]
 polygon = PackedVector2Array(796, -3830, 860, -3830, 860, -3440, 796, -3440)
 
+[node name="StorageElevatorArea" type="Area2D" parent="StorageRoom" unique_id=1701100004]
+position = Vector2(-623, -4265)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageElevatorArea" unique_id=1701100005]
+shape = SubResource("CircleShape2D_elevator_interact")
+
+[node name="ElevatorSprite" type="Sprite2D" parent="StorageRoom/StorageElevatorArea" unique_id=1701100006]
+z_index = 4
+position = Vector2(41, 63.000107)
+scale = Vector2(0.25565735, 0.25561646)
+texture = ExtResource("19_elevator_tex")
+
+[node name="StorageBox" type="Area2D" parent="StorageRoom" unique_id=1701100011]
+position = Vector2(-156, -3920)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageBox" unique_id=1701100012]
+shape = SubResource("CircleShape2D_storage_box_interact")
+
+[node name="StorageBoxSprite" type="Sprite2D" parent="StorageRoom/StorageBox" unique_id=1701100013]
+z_index = 5
+scale = Vector2(0.22, 0.22)
+texture = ExtResource("20_box_tex")
+
 [node name="SecondFloor" type="Node2D" parent="." unique_id=154713421]
 z_index = -9
 
@@ -612,15 +651,19 @@ polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -4840, -980, -4840)
 
 [node name="TopWall" type="Polygon2D" parent="SecondFloor" unique_id=299671053]
 color = Color(0.16, 0.12, 0.09, 1)
-polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -6128, -980, -6128)
+polygon = PackedVector2Array(-980, -6200, -160, -6200, -160, -6128, -980, -6128)
+
+[node name="TopWallRight" type="Polygon2D" parent="SecondFloor" unique_id=299671054]
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(160, -6200, 980, -6200, 980, -6128, 160, -6128)
 
 [node name="BottomWallLeft" type="Polygon2D" parent="SecondFloor" unique_id=145019786]
 color = Color(0.16, 0.12, 0.09, 1)
-polygon = PackedVector2Array(-980, -4912, -160, -4912, -160, -4840, -980, -4840)
+polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
 
 [node name="BottomWallRight" type="Polygon2D" parent="SecondFloor" unique_id=146743230]
 color = Color(0.16, 0.12, 0.09, 1)
-polygon = PackedVector2Array(160, -4912, 980, -4912, 980, -4840, 160, -4840)
+polygon = PackedVector2Array(0, -4912, 980, -4912, 980, -4840, 0, -4840)
 
 [node name="LeftWall" type="Polygon2D" parent="SecondFloor" unique_id=602982772]
 color = Color(0.16, 0.12, 0.09, 1)
@@ -630,26 +673,66 @@ polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 color = Color(0.16, 0.12, 0.09, 1)
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 
-[node name="DoorLintel" type="Polygon2D" parent="SecondFloor" unique_id=203222940]
-color = Color(0.86, 0.67, 0.15, 1)
-polygon = PackedVector2Array(-160, -4912, 160, -4912, 160, -4840, -160, -4840)
-
 [node name="Walls" type="StaticBody2D" parent="SecondFloor" unique_id=827673024]
 
 [node name="Top" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=138097635]
-polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -6128, -980, -6128)
+polygon = PackedVector2Array(-980, -6200, -160, -6200, -160, -6128, -980, -6128)
+
+[node name="TopRight" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=138097636]
+polygon = PackedVector2Array(160, -6200, 980, -6200, 980, -6128, 160, -6128)
 
 [node name="BottomLeft" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=1021589088]
-polygon = PackedVector2Array(-980, -4912, -160, -4912, -160, -4840, -980, -4840)
+polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
 
 [node name="BottomRight" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=911001390]
-polygon = PackedVector2Array(160, -4912, 980, -4912, 980, -4840, 160, -4840)
+polygon = PackedVector2Array(0, -4912, 980, -4912, 980, -4840, 0, -4840)
 
 [node name="Left" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=179715571]
 polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 
 [node name="Right" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=1458679008]
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
+
+[node name="GalleryClock" type="Sprite2D" parent="SecondFloor" unique_id=1701100001]
+position = Vector2(566, -5985)
+scale = Vector2(0.18110606, 0.18260276)
+texture = ExtResource("16_clock_tex")
+
+[node name="GalleryBookshelf" type="Sprite2D" parent="SecondFloor" unique_id=1701100002]
+position = Vector2(770, -5992)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("17_bookshelf_tex")
+
+[node name="GalleryCue11" type="Sprite2D" parent="SecondFloor" unique_id=1701100010]
+z_index = 4
+position = Vector2(356.64996, -5984.1)
+scale = Vector2(0.24020548, 0.24534261)
+texture = ExtResource("18_cue11_tex")
+
+[node name="GalleryCodeDoorBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100014]
+position = Vector2(0, -6164)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryCodeDoorBlocker" unique_id=1701100015]
+shape = SubResource("RectangleShape2D_hallway_bottom")
+
+[node name="GalleryCodeLockIcon" type="Sprite2D" parent="SecondFloor" unique_id=1701100016]
+z_index = 6
+position = Vector2(-523, -6093)
+scale = Vector2(0.055, 0.055)
+texture = ExtResource("24_gallery_lock_tex")
+
+[node name="UpperElevatorArea" type="Area2D" parent="SecondFloor" unique_id=1701100007]
+position = Vector2(-2.437, -5041.448)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100008]
+position = Vector2(-826, 59)
+shape = SubResource("CircleShape2D_elevator_interact")
+
+[node name="ElevatorSprite" type="Sprite2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100009]
+z_index = 4
+position = Vector2(-771.56305, -24.551836)
+scale = Vector2(0.25998965, 0.25873405)
+texture = ExtResource("19_elevator_tex")
 
 [node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
 
@@ -747,3 +830,71 @@ texture = ExtResource("14_pr1b6")
 position = Vector2(4262, -5249.0005)
 scale = Vector2(0.14912285, 0.14912282)
 texture = ExtResource("15_gi4ji")
+
+[node name="Floor" type="Polygon2D" parent="." unique_id=1752979073]
+texture_repeat = 2
+position = Vector2(-689, -1288)
+color = Color(1, 1, 1, 0.95)
+texture = ExtResource("8_wood_floor_tex")
+texture_scale = Vector2(2.2, 2.2)
+polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -4840, -980, -4840)
+
+[node name="TopWall" type="Polygon2D" parent="." unique_id=1621265355]
+position = Vector2(-689, -1288)
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -6128, -980, -6128)
+
+[node name="BottomWallLeft" type="Polygon2D" parent="." unique_id=995417796]
+position = Vector2(-689, -1288)
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(-980, -4912, -160, -4912, -160, -4840, -980, -4840)
+
+[node name="BottomWallRight" type="Polygon2D" parent="." unique_id=792758857]
+position = Vector2(-689, -1288)
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(160, -4912, 980, -4912, 980, -4840, 160, -4840)
+
+[node name="LeftWall" type="Polygon2D" parent="." unique_id=1644884392]
+position = Vector2(-689, -1288)
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
+
+[node name="RightWall" type="Polygon2D" parent="." unique_id=1539372640]
+position = Vector2(-689, -1288)
+color = Color(0.16, 0.12, 0.09, 1)
+polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
+
+[node name="DoorLintel" type="Polygon2D" parent="." unique_id=848713120]
+position = Vector2(-689, -1288)
+color = Color(0.86, 0.67, 0.15, 1)
+polygon = PackedVector2Array(-160, -4912, 160, -4912, 160, -4840, -160, -4840)
+
+[node name="196Ce298c6745b97f8322f6e69189b69Cd81b546a4f6b46719596b17612987c6" type="Sprite2D" parent="." unique_id=431433419]
+position = Vector2(-836.99994, -5721)
+scale = Vector2(0.2751868, 0.23185465)
+texture = ExtResource("21_1wct6")
+
+[node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d" type="Sprite2D" parent="." unique_id=355713573]
+position = Vector2(724, -5015.0005)
+scale = Vector2(0.29537672, 0.3307927)
+texture = ExtResource("22_sjfai")
+
+[node name="196Ce298c6745b97f8322f6e69189b69Cd81b546a4f6b46719596b17612987c7" type="Sprite2D" parent="." unique_id=364309992]
+position = Vector2(-836.99994, -5484)
+scale = Vector2(0.2751868, 0.23185465)
+texture = ExtResource("21_1wct6")
+
+[node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d2" type="Sprite2D" parent="." unique_id=54717235]
+position = Vector2(396.99997, -5010.0005)
+scale = Vector2(0.29537672, 0.3307927)
+texture = ExtResource("22_sjfai")
+
+[node name="43170b6Aa9Baa8b110b0c553c948Dae6b52a458b01955a164c74e28725e6Bc3b" type="Sprite2D" parent="." unique_id=1164932428]
+position = Vector2(184, -4988)
+scale = Vector2(0.38043478, 0.27173913)
+texture = ExtResource("23_jxdyh")
+
+[node name="7Da8a2809475220Fdc175a9f6064948791806Bc588463b8e62a3b5b7e21e9Fd8" type="Sprite2D" parent="." unique_id=520597397]
+position = Vector2(-721, -7467)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("26_63dio")

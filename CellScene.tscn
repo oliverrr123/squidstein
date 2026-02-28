@@ -4,11 +4,9 @@
 [ext_resource type="Script" uid="uid://c236u2qaywy5h" path="res://world_sequence.gd" id="3_world_script"]
 [ext_resource type="AudioStream" uid="uid://cs7i0ihk3rmlo" path="res://song.mp3" id="4_music"]
 [ext_resource type="Texture2D" uid="uid://ucg72flw4l6f" path="res://floor.webp" id="5_floor_tex"]
-[ext_resource type="Texture2D" uid="uid://dhn8k28k8glas" path="res://guy.png" id="6_guy_tex"]
 [ext_resource type="Texture2D" uid="uid://cqxolsuq2chjx" path="res://doc.png" id="7_doc_tex"]
 [ext_resource type="Texture2D" uid="uid://gegxg58c26b0" path="res://bedhospital.jpg" id="8_bed_tex"]
 [ext_resource type="Texture2D" uid="uid://1iukcae6qgcq" path="res://wood_floor.svg" id="8_wood_floor_tex"]
-[ext_resource type="Texture2D" uid="uid://dcknjnbl78d30" path="res://guard.png" id="9_guard_tex"]
 [ext_resource type="Texture2D" uid="uid://bdw3v8ubheqjx" path="res://prisoner.png" id="10_prisoner_tex"]
 [ext_resource type="Texture2D" uid="uid://ckceaorxnwden" path="res://bed.jpg" id="10_qa2ai"]
 [ext_resource type="Texture2D" uid="uid://dlyku8s33sksw" path="res://chair.png" id="11_sax3l"]
@@ -145,6 +143,17 @@ radius = 82.0
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
 
+[node name="BackgroundUI" type="CanvasLayer" parent="." unique_id=1158735765]
+layer = -100
+
+[node name="BlackBackground" type="ColorRect" parent="BackgroundUI" unique_id=1567490176]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
 [node name="Blockout" type="Node2D" parent="." unique_id=1470356792]
 
 [node name="CellFloor" type="Polygon2D" parent="Blockout" unique_id=1321334500]
@@ -214,6 +223,8 @@ polygon = PackedVector2Array(1520, -2880, 1584, -2880, 1584, 0, 1520, 0)
 
 [node name="Turn1Floor" type="Polygon2D" parent="Blockout" unique_id=942257413]
 texture_repeat = 2
+position = Vector2(304.00015, 0)
+scale = Vector2(0.79999995, 1)
 color = Color(1, 1, 1, 0.5)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)
@@ -513,11 +524,10 @@ shape = SubResource("RectangleShape2D_pre_room_door_lock")
 position = Vector2(500, 400)
 script = ExtResource("1_player_script")
 
-[node name="PlaceholderCube" type="Sprite2D" parent="Player" unique_id=1969951438]
+[node name="PlaceholderCube" type="AnimatedSprite2D" parent="Player" unique_id=1969951438]
 z_index = 1
 position = Vector2(0.9999895, -3.9999971)
-scale = Vector2(0.16033329, 0.16033329)
-texture = ExtResource("6_guy_tex")
+scale = Vector2(3, 3)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=483166596]
 position = Vector2(-0.5, 0)
@@ -536,18 +546,16 @@ shape = SubResource("CapsuleShape2D_obyqa")
 [node name="OtherGuy" type="Node2D" parent="." unique_id=1103155141]
 position = Vector2(1800, 400)
 
-[node name="OtherGuyCube" type="Sprite2D" parent="OtherGuy" unique_id=817480911]
+[node name="OtherGuyCube" type="AnimatedSprite2D" parent="OtherGuy" unique_id=817480911]
 position = Vector2(0.9999895, -3.9999971)
-scale = Vector2(0.19, 0.19)
-texture = ExtResource("10_prisoner_tex")
+scale = Vector2(3, 3)
 
 [node name="Guard" type="CharacterBody2D" parent="." unique_id=493819865]
 position = Vector2(1360, -620)
 
-[node name="GuardCube" type="Sprite2D" parent="Guard" unique_id=1116291392]
+[node name="GuardCube" type="AnimatedSprite2D" parent="Guard" unique_id=1116291392]
 position = Vector2(0.9999895, -3.9999971)
-scale = Vector2(0.16033329, 0.16033329)
-texture = ExtResource("9_guard_tex")
+scale = Vector2(3, 3)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Guard" unique_id=904612331]
 position = Vector2(0, -0.5)
@@ -556,10 +564,9 @@ shape = SubResource("RectangleShape2D_guard")
 [node name="Doctor" type="Node2D" parent="." unique_id=1662555695]
 position = Vector2(4470, -5080)
 
-[node name="DoctorCube" type="Sprite2D" parent="Doctor" unique_id=369317786]
+[node name="DoctorCube" type="AnimatedSprite2D" parent="Doctor" unique_id=369317786]
 position = Vector2(0.9999895, -3.9999971)
-scale = Vector2(0.16033329, 0.16033329)
-texture = ExtResource("7_doc_tex")
+scale = Vector2(3, 3)
 
 [node name="DoctorDisguiseArea" type="Area2D" parent="." unique_id=1709120339]
 position = Vector2(4240, -5080)
@@ -735,6 +742,7 @@ scale = Vector2(0.25998965, 0.25873405)
 texture = ExtResource("19_elevator_tex")
 
 [node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
+layer = 10
 
 [node name="Panel" type="Panel" parent="DialogueUI" unique_id=1916797272]
 offset_left = 100.0
@@ -753,6 +761,7 @@ text = "Dialogue"
 autowrap_mode = 3
 
 [node name="MinigameUI" type="CanvasLayer" parent="." unique_id=500443876]
+layer = 10
 
 [node name="Panel" type="Panel" parent="MinigameUI" unique_id=2001729907]
 offset_left = 560.0

@@ -8,6 +8,8 @@ extends Node2D
 @onready var doctor: Node2D = $Doctor
 @onready var doctor_cube: CanvasItem = $Doctor/DoctorCube
 @onready var disguise_area: Area2D = $DoctorDisguiseArea
+@onready var pre_surgery_door_lock: CollisionShape2D = $PreSurgeryDoorLock/CollisionShape2D
+@onready var pre_surgery_door_lintel: CanvasItem = $Blockout/EndRoomToPreDoorLintel
 @onready var dialogue_panel: Panel = $DialogueUI/Panel
 @onready var dialogue_label: Label = $DialogueUI/Panel/DialogueText
 @onready var cell_door_lock: CollisionShape2D = $CellDoorLock/CollisionShape2D
@@ -30,8 +32,15 @@ const BED_POSITION := Vector2(4240, -5080)
 const DOCTOR_TARGET_OFFSET := Vector2(0, 120)
 const DOCTOR_BED_POSITION := BED_POSITION
 const PLAYER_BED_SIDE_POSITION := BED_POSITION + Vector2(-130, 120)
+const DOCTOR_START_POSITION := Vector2(4470, -5080)
 const DOCTOR_DISGUISE_TEXTURE := preload("res://doc_guy.png")
 const DOCTOR_FAINT_TEXTURE := preload("res://doc_switched.png")
+const PLAYER_DEFAULT_TEXTURE := preload("res://guy.png")
+const DOCTOR_DEFAULT_TEXTURE := preload("res://doc.png")
+const PRE_SURGERY_UNLOCK_DISTANCE := 140.0
+const CHECKPOINT_CELL_POSITION := Vector2(500, 400)
+const CHECKPOINT_DOCTOR_POSITION := Vector2(3920, -4920)
+const CHECKPOINT_PRE_SURGERY_POSITION := Vector2(5240, -5080)
 
 enum SequenceState {
 	IDLE,
@@ -106,14 +115,31 @@ var spam_progress := 0.0
 var spam_required := 26.0
 var spam_decay_per_second := 6.0
 var spam_press_gain := 1.0
+var has_keycard := false
+var keycard_fx_timer := 0.0
+var keycard_fx_duration := 1.2
+var keycard_fx_active := false
+var keycard_fx_layer: CanvasLayer
+var keycard_fx_rect: ColorRect
+var keycard_fx_label: Label
+var pre_surgery_unlocked := false
+var checkpoint_positions: Array[Vector2] = [
+	CHECKPOINT_CELL_POSITION,
+	CHECKPOINT_DOCTOR_POSITION,
+	CHECKPOINT_PRE_SURGERY_POSITION,
+]
+var checkpoint_names: Array[String] = [
+	"Cell",
+	"Doctor Room",
+	"Pre-Surgery Room",
+]
+var current_checkpoint_index := 0
 
 func _ready() -> void:
-	guard.visible = false
-	guard.position = GUARD_SPAWN_POSITION
-	cell_door_lock.disabled = false
 	dialogue_panel.visible = false
 	minigame_ui.visible = false
 	disguise_area.monitoring = false
+	_setup_keycard_fx_ui()
 	#if music_player.stream is AudioStreamMP3:
 		#(music_player.stream as AudioStreamMP3).loop = true
 	#if not music_player.playing:
@@ -121,8 +147,11 @@ func _ready() -> void:
 	trigger_area.body_entered.connect(_on_story_trigger_body_entered)
 	disguise_area.body_entered.connect(_on_disguise_area_body_entered)
 	disguise_area.body_exited.connect(_on_disguise_area_body_exited)
+	_restart_from_checkpoint(0)
 
 func _physics_process(delta: float) -> void:
+	_update_keycard_fx(delta)
+	_handle_checkpoint_cheat_input()
 	match state:
 		SequenceState.DIALOGUE:
 			if Input.is_action_just_pressed("interact"):
@@ -179,6 +208,7 @@ func _physics_process(delta: float) -> void:
 			doctor_approach_timer = 0.0
 			anesthesia_started = false
 			anesthesia_won = false
+			current_checkpoint_index = 1
 			doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
 			_start_anesthesia_spam()
 		SequenceState.GUARD_LEAVE_END_ROOM:
@@ -209,7 +239,10 @@ func _physics_process(delta: float) -> void:
 			_update_guard_exit(delta)
 			player.global_position = BED_POSITION
 			doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
-			spam_progress = maxf(0.0, spam_progress - spam_decay_per_second * delta)
+			spam_progress -= spam_decay_per_second * delta
+			if spam_progress < 0.0:
+				_on_anesthesia_failed()
+				return
 			_refresh_spam_ui()
 			if Input.is_action_just_pressed("interact"):
 				spam_progress = minf(spam_required, spam_progress + spam_press_gain)
@@ -364,7 +397,7 @@ func _start_anesthesia_minigame() -> void:
 	state = SequenceState.ANESTHESIA_MINIGAME
 
 func _start_anesthesia_spam() -> void:
-	spam_progress = 0.0
+	spam_progress = spam_required * 0.5
 	timing_line.visible = true
 	target_zone.visible = true
 	needle.visible = false
@@ -459,11 +492,26 @@ func _handle_disguise_interaction() -> void:
 			_wear_doctor_clothes()
 		return
 
+	if has_keycard and not pre_surgery_door_lock.disabled:
+		var near_door := player.global_position.distance_to(pre_surgery_door_lock.global_position) <= PRE_SURGERY_UNLOCK_DISTANCE
+		if near_door:
+			dialogue_panel.visible = true
+			dialogue_label.text = "Press E to use keycard on pre-surgery room."
+			if Input.is_action_just_pressed("interact"):
+				_unlock_pre_surgery_door()
+				dialogue_label.text = "Keycard accepted.\n\n[Press E]"
+			return
+
 	if is_disguised and dialogue_panel.visible and Input.is_action_just_pressed("interact"):
+		dialogue_panel.visible = false
+		return
+
+	if dialogue_panel.visible and Input.is_action_just_pressed("interact"):
 		dialogue_panel.visible = false
 
 func _wear_doctor_clothes() -> void:
 	is_disguised = true
+	has_keycard = true
 	player_in_disguise_area = false
 	disguise_area.set_deferred("monitoring", false)
 	var player_sprite := player_cube as Sprite2D
@@ -478,5 +526,182 @@ func _wear_doctor_clothes() -> void:
 		doctor_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	else:
 		doctor_cube.modulate = Color(0.55, 0.55, 0.6, 1.0)
+	_show_keycard_fx()
 	dialogue_panel.visible = true
-	dialogue_label.text = "You put on the doctor's clothes.\n\n[Press E]"
+	dialogue_label.text = "You put on the doctor's clothes and got a keycard.\n\n[Press E]"
+
+func _setup_keycard_fx_ui() -> void:
+	keycard_fx_layer = CanvasLayer.new()
+	keycard_fx_layer.layer = 20
+	add_child(keycard_fx_layer)
+
+	keycard_fx_rect = ColorRect.new()
+	keycard_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	keycard_fx_rect.visible = false
+	var shader := Shader.new()
+	shader.code = "shader_type canvas_item;\nuniform float t = 0.0;\nvoid fragment() {\n\tvec2 p = UV - vec2(0.5);\n\tfloat a = atan(p.y, p.x);\n\tfloat r = length(p);\n\tfloat rays = pow(abs(sin(a * 14.0 + t * 8.0)), 5.0);\n\tfloat fade = smoothstep(1.15, 0.08, r);\n\tfloat alpha = rays * fade * 0.6;\n\tvec3 col = mix(vec3(1.0, 0.45, 0.05), vec3(1.0, 0.9, 0.2), rays);\n\tCOLOR = vec4(col, alpha);\n}\n"
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	keycard_fx_rect.material = mat
+	keycard_fx_layer.add_child(keycard_fx_rect)
+
+	keycard_fx_label = Label.new()
+	keycard_fx_label.text = "KEYCARD ACQUIRED"
+	keycard_fx_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	keycard_fx_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	keycard_fx_label.set("theme_override_font_sizes/font_size", 52)
+	keycard_fx_label.modulate = Color(1, 1, 1, 1)
+	keycard_fx_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	keycard_fx_label.position = Vector2(-420, -40)
+	keycard_fx_label.size = Vector2(840, 80)
+	keycard_fx_label.visible = false
+	keycard_fx_layer.add_child(keycard_fx_label)
+
+func _show_keycard_fx() -> void:
+	keycard_fx_active = true
+	keycard_fx_timer = 0.0
+	keycard_fx_rect.visible = true
+	keycard_fx_label.visible = true
+
+func _update_keycard_fx(delta: float) -> void:
+	if not keycard_fx_active:
+		return
+	keycard_fx_timer += delta
+	var mat := keycard_fx_rect.material as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("t", keycard_fx_timer)
+	if keycard_fx_timer >= keycard_fx_duration:
+		keycard_fx_active = false
+		keycard_fx_rect.visible = false
+		keycard_fx_label.visible = false
+
+func _unlock_pre_surgery_door() -> void:
+	if pre_surgery_unlocked:
+		return
+	pre_surgery_unlocked = true
+	current_checkpoint_index = 2
+	pre_surgery_door_lock.disabled = true
+	pre_surgery_door_lock.set_deferred("disabled", true)
+	var lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
+	if lock_body != null:
+		lock_body.collision_layer = 0
+		lock_body.collision_mask = 0
+	pre_surgery_door_lintel.visible = false
+
+func _on_anesthesia_failed() -> void:
+	_restart_from_checkpoint(0)
+
+func _reset_to_checkpoint(index: int) -> void:
+	var clamped := clampi(index, 0, checkpoint_positions.size() - 1)
+	current_checkpoint_index = clamped
+	player.global_position = checkpoint_positions[clamped]
+	guard.visible = false
+	guard_exit_running = false
+	escorting = false
+	path_index = 0
+	player_in_disguise_area = false
+	doctor_sequence_started = false
+	anesthesia_started = false
+	anesthesia_won = false
+	spam_progress = spam_required * 0.5
+
+func _restart_from_checkpoint(index: int) -> void:
+	_reset_to_checkpoint(index)
+
+	var player_sprite := player_cube as Sprite2D
+	if player_sprite != null:
+		player_sprite.texture = PLAYER_DEFAULT_TEXTURE
+		player_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+	var doctor_sprite := doctor_cube as Sprite2D
+	if doctor_sprite != null:
+		doctor_sprite.texture = DOCTOR_DEFAULT_TEXTURE
+		doctor_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+	guard.global_position = GUARD_SPAWN_POSITION
+	guard.velocity = Vector2.ZERO
+	other_guy.visible = true
+	other_guy.global_position = Vector2(1800, 400)
+	doctor.global_position = DOCTOR_START_POSITION
+
+	keycard_fx_active = false
+	keycard_fx_rect.visible = false
+	keycard_fx_label.visible = false
+
+	if index == 0:
+		# Full story reset (cell start).
+		has_keycard = false
+		is_disguised = false
+		player_in_disguise_area = false
+		guard_exit_running = false
+		pre_surgery_unlocked = false
+		pre_surgery_door_lock.disabled = false
+		cell_door_lock.disabled = false
+		pre_surgery_door_lintel.visible = true
+		trigger_area.set_deferred("monitoring", true)
+		dialogue_panel.visible = false
+		minigame_ui.visible = false
+		player.set_physics_process(true)
+		state = SequenceState.IDLE
+		return
+
+	if index == 1:
+		# Doctor checkpoint restart.
+		has_keycard = false
+		is_disguised = false
+		player_in_disguise_area = false
+		pre_surgery_unlocked = false
+		pre_surgery_door_lock.disabled = false
+		pre_surgery_door_lintel.visible = true
+		cell_door_lock.disabled = true
+		trigger_area.set_deferred("monitoring", false)
+		player.global_position = BED_POSITION
+		doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
+		dialogue_panel.visible = false
+		minigame_ui.visible = false
+		player.set_physics_process(true)
+		_start_anesthesia_spam()
+		return
+
+	# Pre-surgery checkpoint restart.
+	has_keycard = true
+	is_disguised = true
+	player_in_disguise_area = false
+	cell_door_lock.disabled = true
+	trigger_area.set_deferred("monitoring", false)
+	var player_sprite2 := player_cube as Sprite2D
+	if player_sprite2 != null:
+		player_sprite2.texture = DOCTOR_DISGUISE_TEXTURE
+		player_sprite2.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	var doctor_sprite2 := doctor_cube as Sprite2D
+	if doctor_sprite2 != null:
+		doctor_sprite2.texture = DOCTOR_FAINT_TEXTURE
+		doctor_sprite2.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	_unlock_pre_surgery_door()
+	dialogue_panel.visible = false
+	minigame_ui.visible = false
+	player.set_physics_process(true)
+	state = SequenceState.DONE
+
+func _handle_checkpoint_cheat_input() -> void:
+	if not Input.is_physical_key_pressed(KEY_SHIFT):
+		return
+
+	var direction := 0
+	if Input.is_action_just_pressed("ui_right") or Input.is_action_just_pressed("ui_down"):
+		direction = 1
+	elif Input.is_action_just_pressed("ui_left") or Input.is_action_just_pressed("ui_up"):
+		direction = -1
+
+	if direction == 0:
+		return
+
+	var next_index := current_checkpoint_index + direction
+	if next_index < 0:
+		next_index = checkpoint_positions.size() - 1
+	elif next_index >= checkpoint_positions.size():
+		next_index = 0
+
+	_restart_from_checkpoint(next_index)
+	dialogue_panel.visible = true
+	dialogue_label.text = "Cheat checkpoint: %s\n\n[Press E]" % checkpoint_names[current_checkpoint_index]

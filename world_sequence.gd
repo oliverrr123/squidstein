@@ -4,15 +4,20 @@ extends Node2D
 @onready var player_cube: CanvasItem = $Player/PlaceholderCube
 @onready var trigger_area: Area2D = $StoryTrigger
 @onready var guard: CharacterBody2D = $Guard
+@onready var guard_cube: AnimatedSprite2D = $Guard/GuardCube
 @onready var other_guy: Node2D = $OtherGuy
+@onready var other_guy_cube: AnimatedSprite2D = $OtherGuy/OtherGuyCube
 @onready var doctor: Node2D = $Doctor
-@onready var doctor_cube: CanvasItem = $Doctor/DoctorCube
+@onready var doctor_cube: AnimatedSprite2D = $Doctor/DoctorCube
 @onready var disguise_area: Area2D = $DoctorDisguiseArea
 @onready var pre_surgery_door_lock: CollisionShape2D = $PreSurgeryDoorLock/CollisionShape2D
 @onready var pre_surgery_door_lintel: CanvasItem = $Blockout/EndRoomToPreDoorLintel
 @onready var dialogue_panel: Panel = $DialogueUI/Panel
 @onready var dialogue_label: Label = $DialogueUI/Panel/DialogueText
 @onready var cell_door_lock: CollisionShape2D = $CellDoorLock/CollisionShape2D
+@onready var cell_door_lintel: CanvasItem = $Blockout/CellDoorLintel
+@onready var hall_door_lintel: CanvasItem = $Blockout/HallDoorLintel
+@onready var end_room_door_lintel: CanvasItem = $Blockout/EndRoomDoorLintel
 @onready var music_player: AudioStreamPlayer = $Music
 @onready var minigame_ui: CanvasLayer = $MinigameUI
 @onready var struggle_label: Label = $MinigameUI/Panel/PromptLabel
@@ -35,10 +40,16 @@ const DOCTOR_BED_POSITION := BED_POSITION
 const PLAYER_BED_SIDE_POSITION := BED_POSITION + Vector2(-130, 120)
 const DOCTOR_START_POSITION := Vector2(4470, -5080)
 const DOCTOR_DISGUISE_TEXTURE := preload("res://doc_guy.png")
-const DOCTOR_FAINT_TEXTURE := preload("res://doc_switched.png")
+const DOCTOR_FAINT_TEXTURE := preload("res://docsuitx.png")
+const DOCTOR_LOOTED_TEXTURE := preload("res://docx.png")
 const PLAYER_DEFAULT_TEXTURE := preload("res://guy.png")
+const PLAYER_BED_TEXTURE := preload("res://Created_a_guy_with_a_torn_white_tank_top_red_short/rotations/south.png")
 const DOCTOR_DEFAULT_TEXTURE := preload("res://doc.png")
+const LOCK_ICON_TEXTURE := preload("res://lock.png")
 const SUNBURST_TEXTURE := preload("res://sunburst.png")
+const KIDNAPPER_PACK_ROOT := "res://Kidnapper"
+const VICTIM_PACK_ROOT := "res://Victim"
+const DOCTOR_PACK_ROOT := "res://Doc"
 const PRE_SURGERY_UNLOCK_DISTANCE := 140.0
 const KEY_USE_MAX := 11
 const CUE_PICKUP_AMOUNT := 1
@@ -71,6 +82,8 @@ const STORAGE_BOX_POSITION := Vector2(120, -3920)
 const STORAGE_ELEVATOR_POSITION := Vector2(260, -3660)
 const UPPER_ELEVATOR_POSITION := Vector2(-40, -5020)
 const CUE_FIVE_INVOICE_TEXT := "Invoice (Cue 5):\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
+const HALL_DOOR_POSITION := Vector2(1552, 400)
+const END_ROOM_DOOR_POSITION := Vector2(3472, -4920)
 const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
 const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
 const GALLERY_STATUE_POSITION := Vector2(0, -5420)
@@ -131,6 +144,12 @@ var guard_leave_end_room_path: Array[Vector2] = [
 ]
 var path_index := 0
 var escorting := false
+var guard_frames: SpriteFrames
+var guard_facing := "south"
+var other_guy_frames: SpriteFrames
+var other_guy_facing := "south"
+var doctor_frames: SpriteFrames
+var doctor_facing := "south"
 var return_delay_seconds := 5.0
 var return_timer := 0.0
 var guard_return_phase := 0
@@ -205,12 +224,19 @@ var upper_elevator_area: Area2D
 var upper_elevator_in_range := false
 var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
+var cell_lock_icon: Sprite2D
+var hall_lock_icon: Sprite2D
+var end_room_lock_icon: Sprite2D
+var pre_surgery_lock_icon: Sprite2D
+var storage_lock_icon: Sprite2D
 var visibility_fx_layer: CanvasLayer
 var visibility_fx_rect: ColorRect
 var room_vision_enabled := true
 var current_room_index := -1
 var pre_surgery_lock_default_layer := 0
 var pre_surgery_lock_default_mask := 0
+var hall_door_unlocked := false
+var end_room_door_unlocked := false
 var pre_surgery_unlocked := false
 var storage_unlocked := false
 var checkpoint_positions: Array[Vector2] = [
@@ -236,6 +262,9 @@ func _ready() -> void:
 	cue_collected.resize(KEY_USE_MAX)
 	for i in range(KEY_USE_MAX):
 		cue_collected[i] = false
+	_setup_guard_visual()
+	_setup_other_guy_visual()
+	_setup_doctor_visual()
 	_setup_keycard_fx_ui()
 	_setup_key_hud_ui()
 	_setup_inventory_ui()
@@ -246,6 +275,8 @@ func _ready() -> void:
 	_setup_storage_box()
 	_setup_elevator_points()
 	_setup_visibility_fx()
+	_setup_door_lock_icons()
+	_refresh_door_lock_icons()
 	_setup_gallery_interior()
 	_setup_cue_seven_pickup()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
@@ -278,6 +309,7 @@ func _physics_process(delta: float) -> void:
 		SequenceState.GUARD_TO_GUY:
 			if dialogue_panel.visible and Input.is_action_just_pressed("interact"):
 				_advance_dialogue()
+			_try_unlock_hall_door_on_guard_touch()
 			var reached := _move_along_path(guard, to_guy_path, guard_speed, delta)
 			if reached:
 				escorting = true
@@ -290,8 +322,11 @@ func _physics_process(delta: float) -> void:
 			var reached := _move_along_path(guard, out_path, guard_speed, delta)
 			if escorting and other_guy.visible:
 				var follow_target := guard.global_position + Vector2(90, 0)
+				var previous_position := other_guy.global_position
 				other_guy.global_position = other_guy.global_position.move_toward(follow_target, npc_follow_speed * delta)
+				_update_other_guy_visual(other_guy.global_position - previous_position)
 			if reached:
+				_update_other_guy_visual(Vector2.ZERO)
 				guard.visible = false
 				other_guy.visible = false
 				dialogue_panel.visible = false
@@ -312,6 +347,7 @@ func _physics_process(delta: float) -> void:
 				if reached_player or guard.global_position.distance_to(player.global_position) < PLAYER_GRAB_DISTANCE:
 					_start_escort_player()
 		SequenceState.ESCORT_PLAYER:
+			_try_unlock_end_room_door_on_guard_touch()
 			var reached_dest := _move_along_path(guard, escort_player_path, guard_escort_speed, delta)
 			# Hard-attach player to guard so pickup looks intentional.
 			player.global_position = guard.global_position + PLAYER_ESCORT_OFFSET
@@ -382,6 +418,7 @@ func _physics_process(delta: float) -> void:
 			player.global_position = BED_POSITION.lerp(PLAYER_BED_SIDE_POSITION, k)
 			doctor.global_position = (BED_POSITION + DOCTOR_TARGET_OFFSET).lerp(BED_POSITION + Vector2(120, 0), k)
 			if fight_timer >= fight_duration:
+				_set_doctor_default_visual()
 				fight_timer = 0.0
 				state = SequenceState.PUT_DOCTOR_ON_BED
 		SequenceState.PUT_DOCTOR_ON_BED:
@@ -405,17 +442,194 @@ func _move_guard_toward(point: Vector2, speed: float, _delta: float) -> bool:
 	if to_target.length() < 2.0:
 		guard.velocity = Vector2.ZERO
 		guard.move_and_slide()
+		_update_guard_visual(Vector2.ZERO)
 		return true
 
 	guard.velocity = to_target.normalized() * speed
 	guard.move_and_slide()
+	_update_guard_visual(guard.velocity)
 	return guard.global_position.distance_to(point) < 8.0
+
+func _setup_guard_visual() -> void:
+	if guard_cube == null:
+		return
+	guard_frames = SpriteFrames.new()
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west", "walk_south", "walk_north", "walk_east", "walk_west"]:
+		guard_frames.add_animation(anim)
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west"]:
+		guard_frames.set_animation_loop(anim, true)
+		guard_frames.set_animation_speed(anim, 1.0)
+	for anim in ["walk_south", "walk_north", "walk_east", "walk_west"]:
+		guard_frames.set_animation_loop(anim, true)
+		guard_frames.set_animation_speed(anim, 10.0)
+
+	_add_guard_single_frame("idle_south", "%s/rotations/south.png" % KIDNAPPER_PACK_ROOT)
+	_add_guard_single_frame("idle_north", "%s/rotations/north.png" % KIDNAPPER_PACK_ROOT)
+	_add_guard_single_frame("idle_east", "%s/rotations/east.png" % KIDNAPPER_PACK_ROOT)
+	_add_guard_single_frame("idle_west", "%s/rotations/west.png" % KIDNAPPER_PACK_ROOT)
+	_add_guard_walk_frames("walk_south", "%s/animations/walk/south" % KIDNAPPER_PACK_ROOT)
+	_add_guard_walk_frames("walk_north", "%s/animations/walk/north" % KIDNAPPER_PACK_ROOT)
+	_add_guard_walk_frames("walk_east", "%s/animations/walk/east" % KIDNAPPER_PACK_ROOT)
+	_add_guard_walk_frames("walk_west", "%s/animations/walk/west" % KIDNAPPER_PACK_ROOT)
+
+	guard_cube.sprite_frames = guard_frames
+	guard_cube.play("idle_south")
+	guard_cube.stop()
+
+func _add_guard_single_frame(animation: String, path: String) -> void:
+	var tex := load(path)
+	if tex is Texture2D:
+		guard_frames.add_frame(animation, tex)
+
+func _add_guard_walk_frames(animation: String, dir_path: String) -> void:
+	for i in range(6):
+		var tex := load("%s/frame_%03d.png" % [dir_path, i])
+		if tex is Texture2D:
+			guard_frames.add_frame(animation, tex)
+
+func _update_guard_visual(motion: Vector2) -> void:
+	if guard_cube == null:
+		return
+	if motion.length_squared() <= 0.0001:
+		guard_cube.play("idle_%s" % guard_facing)
+		guard_cube.stop()
+		return
+	if absf(motion.x) > absf(motion.y):
+		guard_facing = "east" if motion.x > 0.0 else "west"
+	else:
+		guard_facing = "south" if motion.y > 0.0 else "north"
+	guard_cube.play("walk_%s" % guard_facing)
+
+func _setup_other_guy_visual() -> void:
+	if other_guy_cube == null:
+		return
+	other_guy_frames = SpriteFrames.new()
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west", "walk_south", "walk_north", "walk_east", "walk_west"]:
+		other_guy_frames.add_animation(anim)
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west"]:
+		other_guy_frames.set_animation_loop(anim, true)
+		other_guy_frames.set_animation_speed(anim, 1.0)
+	for anim in ["walk_south", "walk_north", "walk_east", "walk_west"]:
+		other_guy_frames.set_animation_loop(anim, true)
+		other_guy_frames.set_animation_speed(anim, 10.0)
+
+	_add_other_guy_single_frame("idle_south", "%s/rotations/south.png" % VICTIM_PACK_ROOT)
+	_add_other_guy_single_frame("idle_north", "%s/rotations/north.png" % VICTIM_PACK_ROOT)
+	_add_other_guy_single_frame("idle_east", "%s/rotations/east.png" % VICTIM_PACK_ROOT)
+	_add_other_guy_single_frame("idle_west", "%s/rotations/west.png" % VICTIM_PACK_ROOT)
+	_add_other_guy_walk_frames("walk_south", "%s/animations/walk/south" % VICTIM_PACK_ROOT)
+	_add_other_guy_walk_frames("walk_north", "%s/animations/walk/north" % VICTIM_PACK_ROOT)
+	_add_other_guy_walk_frames("walk_east", "%s/animations/walk/east" % VICTIM_PACK_ROOT)
+	_add_other_guy_walk_frames("walk_west", "%s/animations/walk/west" % VICTIM_PACK_ROOT)
+
+	other_guy_cube.sprite_frames = other_guy_frames
+	other_guy_cube.play("idle_south")
+	other_guy_cube.stop()
+
+func _add_other_guy_single_frame(animation: String, path: String) -> void:
+	var tex := load(path)
+	if tex is Texture2D:
+		other_guy_frames.add_frame(animation, tex)
+
+func _add_other_guy_walk_frames(animation: String, dir_path: String) -> void:
+	for i in range(6):
+		var tex := load("%s/frame_%03d.png" % [dir_path, i])
+		if tex is Texture2D:
+			other_guy_frames.add_frame(animation, tex)
+
+func _update_other_guy_visual(motion: Vector2) -> void:
+	if other_guy_cube == null:
+		return
+	if motion.length_squared() <= 0.0001:
+		other_guy_cube.play("idle_%s" % other_guy_facing)
+		other_guy_cube.stop()
+		return
+	if absf(motion.x) > absf(motion.y):
+		other_guy_facing = "east" if motion.x > 0.0 else "west"
+	else:
+		other_guy_facing = "south" if motion.y > 0.0 else "north"
+	other_guy_cube.play("walk_%s" % other_guy_facing)
+
+func _setup_doctor_visual() -> void:
+	if doctor_cube == null:
+		return
+	doctor_frames = SpriteFrames.new()
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west", "walk_south", "walk_north", "walk_east", "walk_west"]:
+		doctor_frames.add_animation(anim)
+	for anim in ["idle_south", "idle_north", "idle_east", "idle_west"]:
+		doctor_frames.set_animation_loop(anim, true)
+		doctor_frames.set_animation_speed(anim, 1.0)
+	for anim in ["walk_south", "walk_north", "walk_east", "walk_west"]:
+		doctor_frames.set_animation_loop(anim, true)
+		doctor_frames.set_animation_speed(anim, 10.0)
+
+	_add_doctor_single_frame("idle_south", "%s/rotations/south.png" % DOCTOR_PACK_ROOT)
+	_add_doctor_single_frame("idle_north", "%s/rotations/north.png" % DOCTOR_PACK_ROOT)
+	_add_doctor_single_frame("idle_east", "%s/rotations/east.png" % DOCTOR_PACK_ROOT)
+	_add_doctor_single_frame("idle_west", "%s/rotations/west.png" % DOCTOR_PACK_ROOT)
+	_add_doctor_walk_frames("walk_south", "%s/animations/walk/south" % DOCTOR_PACK_ROOT)
+	_add_doctor_walk_frames("walk_north", "%s/animations/walk/north" % DOCTOR_PACK_ROOT)
+	_add_doctor_walk_frames("walk_east", "%s/animations/walk/east" % DOCTOR_PACK_ROOT)
+	_add_doctor_walk_frames("walk_west", "%s/animations/walk/west" % DOCTOR_PACK_ROOT)
+
+	_set_doctor_default_visual()
+
+func _add_doctor_single_frame(animation: String, path: String) -> void:
+	var tex := load(path)
+	if tex is Texture2D:
+		doctor_frames.add_frame(animation, tex)
+
+func _add_doctor_walk_frames(animation: String, dir_path: String) -> void:
+	for i in range(6):
+		var tex := load("%s/frame_%03d.png" % [dir_path, i])
+		if tex is Texture2D:
+			doctor_frames.add_frame(animation, tex)
+
+func _set_doctor_default_visual() -> void:
+	if doctor_cube == null:
+		return
+	doctor_cube.sprite_frames = doctor_frames
+	doctor_cube.modulate = Color(1, 1, 1, 1)
+	doctor_cube.play("idle_south")
+	doctor_cube.stop()
+	doctor_facing = "south"
+
+func _set_doctor_texture_visual(texture: Texture2D) -> void:
+	if doctor_cube == null:
+		return
+	var frames := SpriteFrames.new()
+	frames.add_animation("idle_south")
+	frames.set_animation_loop("idle_south", true)
+	frames.set_animation_speed("idle_south", 1.0)
+	frames.add_frame("idle_south", texture)
+	doctor_cube.sprite_frames = frames
+	doctor_cube.modulate = Color(1, 1, 1, 1)
+	doctor_cube.play("idle_south")
+	doctor_cube.stop()
+
+func _update_doctor_visual(motion: Vector2) -> void:
+	if doctor_cube == null:
+		return
+	if doctor_cube.sprite_frames != doctor_frames:
+		return
+	if motion.length_squared() <= 0.0001:
+		doctor_cube.play("idle_%s" % doctor_facing)
+		doctor_cube.stop()
+		return
+	if absf(motion.x) > absf(motion.y):
+		doctor_facing = "east" if motion.x > 0.0 else "west"
+	else:
+		doctor_facing = "south" if motion.y > 0.0 else "north"
+	doctor_cube.play("walk_%s" % doctor_facing)
 
 func _move_to_point(actor: Node2D, point: Vector2, speed: float, delta: float) -> bool:
 	if actor == guard:
 		return _move_guard_toward(point, speed, delta)
 
+	var previous_position := actor.global_position
 	actor.global_position = actor.global_position.move_toward(point, speed * delta)
+	if actor == doctor:
+		_update_doctor_visual(actor.global_position - previous_position)
 	return actor.global_position.distance_to(point) < 2.0
 
 func _move_along_path(actor: Node2D, points: Array[Vector2], speed: float, delta: float) -> bool:
@@ -497,6 +711,30 @@ func _try_unlock_cell_door_on_guard_touch() -> void:
 		return
 	if guard.global_position.distance_to(cell_door_lock.global_position) <= CELL_DOOR_TOUCH_DISTANCE:
 		cell_door_lock.disabled = true
+		if cell_lock_icon != null:
+			cell_lock_icon.visible = false
+		if cell_door_lintel != null:
+			cell_door_lintel.visible = false
+
+func _try_unlock_hall_door_on_guard_touch() -> void:
+	if hall_door_unlocked:
+		return
+	if guard.global_position.distance_to(HALL_DOOR_POSITION) <= CELL_DOOR_TOUCH_DISTANCE:
+		hall_door_unlocked = true
+		if hall_lock_icon != null:
+			hall_lock_icon.visible = false
+		if hall_door_lintel != null:
+			hall_door_lintel.visible = false
+
+func _try_unlock_end_room_door_on_guard_touch() -> void:
+	if end_room_door_unlocked:
+		return
+	if guard.global_position.distance_to(END_ROOM_DOOR_POSITION) <= CELL_DOOR_TOUCH_DISTANCE:
+		end_room_door_unlocked = true
+		if end_room_lock_icon != null:
+			end_room_lock_icon.visible = false
+		if end_room_door_lintel != null:
+			end_room_door_lintel.visible = false
 
 func _start_anesthesia_minigame() -> void:
 	anesthesia_started = true
@@ -657,18 +895,8 @@ func _wear_doctor_clothes() -> void:
 	_refresh_key_hud()
 	player_in_disguise_area = false
 	disguise_area.set_deferred("monitoring", false)
-	var player_sprite := player_cube as Sprite2D
-	if player_sprite != null:
-		player_sprite.texture = DOCTOR_DISGUISE_TEXTURE
-		player_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	else:
-		player_cube.modulate = Color(0.95, 0.95, 1.0, 1.0)
-	var doctor_sprite := doctor_cube as Sprite2D
-	if doctor_sprite != null:
-		doctor_sprite.texture = DOCTOR_FAINT_TEXTURE
-		doctor_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	else:
-		doctor_cube.modulate = Color(0.55, 0.55, 0.6, 1.0)
+	player.set_disguise_visual()
+	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 	_show_keycard_fx_for_cue(1)
 	dialogue_panel.visible = false
 
@@ -758,6 +986,8 @@ func _unlock_pre_surgery_door() -> void:
 		lock_body.collision_layer = 0
 		lock_body.collision_mask = 0
 	pre_surgery_door_lintel.visible = false
+	if pre_surgery_lock_icon != null:
+		pre_surgery_lock_icon.visible = false
 
 func _lock_pre_surgery_door() -> void:
 	pre_surgery_unlocked = false
@@ -767,7 +997,9 @@ func _lock_pre_surgery_door() -> void:
 	if lock_body != null:
 		lock_body.collision_layer = pre_surgery_lock_default_layer
 		lock_body.collision_mask = pre_surgery_lock_default_mask
-	pre_surgery_door_lintel.visible = true
+	pre_surgery_door_lintel.visible = false
+	if pre_surgery_lock_icon != null:
+		pre_surgery_lock_icon.visible = true
 
 func _setup_key_hud_ui() -> void:
 	var hud := CanvasLayer.new()
@@ -1121,14 +1353,74 @@ func _setup_storage_door() -> void:
 	storage_door_blocker.add_child(storage_door_sprite)
 	_update_storage_door_visibility()
 
+func _setup_door_lock_icons() -> void:
+	var lock_texture := LOCK_ICON_TEXTURE
+
+	cell_lock_icon = Sprite2D.new()
+	cell_lock_icon.texture = lock_texture
+	cell_lock_icon.position = cell_door_lock.global_position
+	cell_lock_icon.scale = Vector2(0.126, 0.126)
+	cell_lock_icon.z_index = 20
+	add_child(cell_lock_icon)
+
+	hall_lock_icon = Sprite2D.new()
+	hall_lock_icon.texture = lock_texture
+	hall_lock_icon.position = HALL_DOOR_POSITION
+	hall_lock_icon.scale = Vector2(0.126, 0.126)
+	hall_lock_icon.z_index = 20
+	add_child(hall_lock_icon)
+
+	end_room_lock_icon = Sprite2D.new()
+	end_room_lock_icon.texture = lock_texture
+	end_room_lock_icon.position = END_ROOM_DOOR_POSITION
+	end_room_lock_icon.scale = Vector2(0.126, 0.126)
+	end_room_lock_icon.z_index = 20
+	add_child(end_room_lock_icon)
+
+	pre_surgery_lock_icon = Sprite2D.new()
+	pre_surgery_lock_icon.texture = lock_texture
+	pre_surgery_lock_icon.position = pre_surgery_door_lock.global_position
+	pre_surgery_lock_icon.scale = Vector2(0.126, 0.126)
+	pre_surgery_lock_icon.z_index = 20
+	add_child(pre_surgery_lock_icon)
+
+	storage_lock_icon = Sprite2D.new()
+	storage_lock_icon.texture = lock_texture
+	storage_lock_icon.position = STORAGE_DOOR_POSITION
+	storage_lock_icon.scale = Vector2(0.126, 0.126)
+	storage_lock_icon.z_index = 20
+	add_child(storage_lock_icon)
+
 func _update_storage_door_visibility() -> void:
 	if storage_door_blocker != null:
 		storage_door_blocker.collision_layer = 1 if not storage_unlocked else 0
 		storage_door_blocker.collision_mask = 1 if not storage_unlocked else 0
 	if storage_door_sprite != null:
-		storage_door_sprite.visible = not storage_unlocked
+		storage_door_sprite.visible = false
+	if storage_lock_icon != null:
+		storage_lock_icon.visible = not storage_unlocked
 	_update_cue_four_visibility()
 	_update_storage_box_visibility()
+
+func _refresh_door_lock_icons() -> void:
+	if cell_lock_icon != null:
+		cell_lock_icon.visible = not cell_door_lock.disabled
+	if cell_door_lintel != null:
+		cell_door_lintel.visible = not cell_door_lock.disabled
+	if hall_lock_icon != null:
+		hall_lock_icon.visible = not hall_door_unlocked
+	if hall_door_lintel != null:
+		hall_door_lintel.visible = not hall_door_unlocked
+	if end_room_lock_icon != null:
+		end_room_lock_icon.visible = not end_room_door_unlocked
+	if end_room_door_lintel != null:
+		end_room_door_lintel.visible = not end_room_door_unlocked
+	if pre_surgery_lock_icon != null:
+		pre_surgery_lock_icon.visible = not pre_surgery_unlocked
+	if pre_surgery_door_lintel != null:
+		pre_surgery_door_lintel.visible = not pre_surgery_unlocked
+	if storage_lock_icon != null:
+		storage_lock_icon.visible = not storage_unlocked
 
 func _handle_storage_door_interaction() -> bool:
 	if storage_unlocked:
@@ -1404,7 +1696,7 @@ func _setup_visibility_fx() -> void:
 	visibility_fx_rect = ColorRect.new()
 	visibility_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shader := Shader.new()
-	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.18;\nuniform float softness = 0.09;\nuniform float dim_alpha = 0.90;\nuniform bool use_room_rect = false;\nuniform vec4 room_rect_uv = vec4(0.0, 0.0, 1.0, 1.0);\nvoid fragment() {\n\tfloat reveal = 0.0;\n\tif (use_room_rect) {\n\t\tfloat inside = step(room_rect_uv.x, SCREEN_UV.x) * step(room_rect_uv.y, SCREEN_UV.y) * step(SCREEN_UV.x, room_rect_uv.z) * step(SCREEN_UV.y, room_rect_uv.w);\n\t\treveal = inside;\n\t} else {\n\t\tfloat d = distance(SCREEN_UV, center_uv);\n\t\treveal = 1.0 - smoothstep(radius, radius + softness, d);\n\t}\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
+	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.16;\nuniform float softness = 0.24;\nuniform float dim_alpha = 0.94;\nvoid fragment() {\n\tfloat d = distance(SCREEN_UV, center_uv);\n\tfloat reveal = 1.0 - smoothstep(radius, radius + softness, d);\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	visibility_fx_rect.material = mat
@@ -1422,21 +1714,9 @@ func _update_visibility_fx() -> void:
 	var viewport_size := get_viewport_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	var screen_pos := get_viewport().get_canvas_transform() * player.global_position
+	var screen_pos := (get_viewport().get_canvas_transform() * player.global_position).round()
 	var center_uv := Vector2(screen_pos.x / viewport_size.x, screen_pos.y / viewport_size.y)
 	mat.set_shader_parameter("center_uv", center_uv)
-	var room_rect := _get_current_room_world_rect()
-	if room_rect.size.x > 0.0 and room_rect.size.y > 0.0:
-		var p1 := get_viewport().get_canvas_transform() * room_rect.position
-		var p2 := get_viewport().get_canvas_transform() * (room_rect.position + room_rect.size)
-		var x1 := minf(p1.x, p2.x) / viewport_size.x
-		var y1 := minf(p1.y, p2.y) / viewport_size.y
-		var x2 := maxf(p1.x, p2.x) / viewport_size.x
-		var y2 := maxf(p1.y, p2.y) / viewport_size.y
-		mat.set_shader_parameter("use_room_rect", true)
-		mat.set_shader_parameter("room_rect_uv", Vector4(x1, y1, x2, y2))
-	else:
-		mat.set_shader_parameter("use_room_rect", false)
 
 func _get_current_room_world_rect() -> Rect2:
 	var p := player.global_position
@@ -1632,20 +1912,16 @@ func _reset_to_checkpoint(index: int) -> void:
 func _restart_from_checkpoint(index: int) -> void:
 	_reset_to_checkpoint(index)
 
-	var player_sprite := player_cube as Sprite2D
-	if player_sprite != null:
-		player_sprite.texture = PLAYER_DEFAULT_TEXTURE
-		player_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	player.set_default_visual()
 
-	var doctor_sprite := doctor_cube as Sprite2D
-	if doctor_sprite != null:
-		doctor_sprite.texture = DOCTOR_DEFAULT_TEXTURE
-		doctor_sprite.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	_set_doctor_default_visual()
 
 	guard.global_position = GUARD_SPAWN_POSITION
 	guard.velocity = Vector2.ZERO
+	_update_guard_visual(Vector2.ZERO)
 	other_guy.visible = true
 	other_guy.global_position = Vector2(1800, 400)
+	_update_other_guy_visual(Vector2.ZERO)
 	doctor.global_position = DOCTOR_START_POSITION
 
 	keycard_fx_active = false
@@ -1670,6 +1946,8 @@ func _restart_from_checkpoint(index: int) -> void:
 		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
+		hall_door_unlocked = false
+		end_room_door_unlocked = false
 		is_disguised = false
 		player_in_disguise_area = false
 		guard_exit_running = false
@@ -1682,6 +1960,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		player.set_physics_process(true)
 		state = SequenceState.IDLE
 		_refresh_key_hud()
+		_refresh_door_lock_icons()
 		return
 
 	if index == 1:
@@ -1700,6 +1979,8 @@ func _restart_from_checkpoint(index: int) -> void:
 		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
+		hall_door_unlocked = true
+		end_room_door_unlocked = true
 		is_disguised = false
 		player_in_disguise_area = false
 		_lock_pre_surgery_door()
@@ -1712,6 +1993,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		player.set_physics_process(true)
 		_start_anesthesia_spam()
 		_refresh_key_hud()
+		_refresh_door_lock_icons()
 		return
 
 	if index == 2:
@@ -1731,24 +2013,21 @@ func _restart_from_checkpoint(index: int) -> void:
 		_update_cue_seven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
+		hall_door_unlocked = true
+		end_room_door_unlocked = true
 		is_disguised = true
 		player_in_disguise_area = false
 		cell_door_lock.disabled = true
 		trigger_area.set_deferred("monitoring", false)
-		var player_sprite2 := player_cube as Sprite2D
-		if player_sprite2 != null:
-			player_sprite2.texture = DOCTOR_DISGUISE_TEXTURE
-			player_sprite2.modulate = Color(1.0, 1.0, 1.0, 1.0)
-		var doctor_sprite2 := doctor_cube as Sprite2D
-		if doctor_sprite2 != null:
-			doctor_sprite2.texture = DOCTOR_FAINT_TEXTURE
-			doctor_sprite2.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		player.set_disguise_visual()
+		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 		_unlock_pre_surgery_door()
 		dialogue_panel.visible = false
 		minigame_ui.visible = false
 		player.set_physics_process(true)
 		state = SequenceState.DONE
 		_refresh_key_hud()
+		_refresh_door_lock_icons()
 		return
 
 	if index == 3:
@@ -1770,24 +2049,21 @@ func _restart_from_checkpoint(index: int) -> void:
 		_update_cue_seven_visibility()
 		storage_unlocked = true
 		_update_storage_door_visibility()
+		hall_door_unlocked = true
+		end_room_door_unlocked = true
 		is_disguised = true
 		player_in_disguise_area = false
 		cell_door_lock.disabled = true
 		trigger_area.set_deferred("monitoring", false)
-		var player_sprite3 := player_cube as Sprite2D
-		if player_sprite3 != null:
-			player_sprite3.texture = DOCTOR_DISGUISE_TEXTURE
-			player_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
-		var doctor_sprite3 := doctor_cube as Sprite2D
-		if doctor_sprite3 != null:
-			doctor_sprite3.texture = DOCTOR_FAINT_TEXTURE
-			doctor_sprite3.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		player.set_disguise_visual()
+		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 		_unlock_pre_surgery_door()
 		dialogue_panel.visible = false
 		minigame_ui.visible = false
 		player.set_physics_process(true)
 		state = SequenceState.DONE
 		_refresh_key_hud()
+		_refresh_door_lock_icons()
 		return
 
 	# Gallery checkpoint restart (after Cue 7).
@@ -1813,24 +2089,21 @@ func _restart_from_checkpoint(index: int) -> void:
 	_update_cue_seven_visibility()
 	storage_unlocked = true
 	_update_storage_door_visibility()
+	hall_door_unlocked = true
+	end_room_door_unlocked = true
 	is_disguised = true
 	player_in_disguise_area = false
 	cell_door_lock.disabled = true
 	trigger_area.set_deferred("monitoring", false)
-	var player_sprite4 := player_cube as Sprite2D
-	if player_sprite4 != null:
-		player_sprite4.texture = DOCTOR_DISGUISE_TEXTURE
-		player_sprite4.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	var doctor_sprite4 := doctor_cube as Sprite2D
-	if doctor_sprite4 != null:
-		doctor_sprite4.texture = DOCTOR_FAINT_TEXTURE
-		doctor_sprite4.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	player.set_disguise_visual()
+	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 	_unlock_pre_surgery_door()
 	dialogue_panel.visible = false
 	minigame_ui.visible = false
 	player.set_physics_process(true)
 	state = SequenceState.DONE
 	_refresh_key_hud()
+	_refresh_door_lock_icons()
 
 func _handle_checkpoint_cheat_input() -> void:
 	if not Input.is_physical_key_pressed(KEY_SHIFT):

@@ -97,7 +97,8 @@ const GALLERY_CODE_MAX_LEN := 4
 const CUE_NINE_DESK_POSITION := Vector2(-721, -7428)
 const CUE_SIX_PICKUP_POSITION := Vector2(951, -4214)
 const CUE_SIX_INTERACT_POSITION := Vector2(875, -4214)
-const BACKUP_LAPTOP_POSITION := Vector2(-456, -7306)
+const BACKUP_LAPTOP_POSITION := Vector2(-590, -7360)
+const BACKUP_LAPTOP_INTERACT_RADIUS := 280.0
 const FINAL_REQUIRED_CUES: Array[int] = [1, 2, 3, 4, 5, 6, 7, 11]
 const ROOM_CELL := Rect2(0, 0, 1200, 800)
 const ROOM_HALLWAY := Rect2(1200, -5000, 320, 5800)
@@ -1905,7 +1906,7 @@ func _handle_cue_nine_interaction() -> bool:
 	return true
 
 func _handle_backup_laptop_interaction() -> bool:
-	var near_laptop := player.global_position.distance_to(BACKUP_LAPTOP_POSITION) <= 104.0
+	var near_laptop := player.global_position.distance_to(BACKUP_LAPTOP_POSITION) <= BACKUP_LAPTOP_INTERACT_RADIUS
 	if not near_laptop:
 		return false
 	dialogue_panel.visible = true

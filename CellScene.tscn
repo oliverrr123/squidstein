@@ -379,6 +379,7 @@ polygon = PackedVector2Array(5776, -5480, 5840, -5480, 5840, -4680, 5776, -4680)
 
 [node name="HallFloor" type="Polygon2D" parent="Blockout" unique_id=1073731529]
 texture_repeat = 2
+position = Vector2(2, 2)
 color = Color(1, 1, 1, 0.5)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)

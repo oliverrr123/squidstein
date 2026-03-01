@@ -33,6 +33,9 @@
 [ext_resource type="Texture2D" uid="uid://cakxvgqng4jfg" path="res://nine.png" id="27_nine_tex"]
 [ext_resource type="Texture2D" uid="uid://c58tmsn5vmt6s" path="res://ed900c66f15a05063e0a9f81a76d860ebd90e628fcbe4e5d72d0703818fe89c7.png" id="27_vnl4d"]
 [ext_resource type="Texture2D" uid="uid://cl6bc4e2eklh" path="res://keypad.png" id="28_keypad_tex"]
+[ext_resource type="Texture2D" uid="uid://5dsbmuvbwwfl" path="res://laptop.png" id="29_laptop_tex"]
+[ext_resource type="FontFile" uid="uid://d18xj71bqx3la" path="res://PressStart2P-Regular.ttf" id="30_pixel_font"]
+[ext_resource type="Texture2D" uid="uid://cd2a3rjfq5ulj" path="res://splash.jpg" id="31_splash_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -832,14 +835,13 @@ shape = SubResource("RectangleShape2D_hallway_bottom")
 
 [node name="GalleryCodeLockIcon" type="Sprite2D" parent="SecondFloor" unique_id=1701100016]
 z_as_relative = false
-z_index = 50
 position = Vector2(-689, -6164)
 scale = Vector2(0.126, 0.126)
 texture = ExtResource("24_gallery_lock_tex")
 
 [node name="Keypad" type="Sprite2D" parent="SecondFloor" unique_id=1701100060]
-z_as_relative = false
 z_index = 50
+z_as_relative = false
 position = Vector2(-509.99997, -6090)
 scale = Vector2(0.05699485, 0.05699485)
 texture = ExtResource("28_keypad_tex")
@@ -991,6 +993,66 @@ stream = ExtResource("4_music")
 volume_db = -10.0
 autoplay = true
 
+[node name="LaptopEndingUI" type="CanvasLayer" parent="." unique_id=1044400101]
+layer = 20
+visible = false
+
+[node name="Backdrop" type="ColorRect" parent="LaptopEndingUI" unique_id=1044400102]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="LaptopFrame" type="TextureRect" parent="LaptopEndingUI" unique_id=1044400103]
+offset_left = 370.0
+offset_top = 90.0
+offset_right = 1550.0
+offset_bottom = 930.0
+texture = ExtResource("29_laptop_tex")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScreenPanel" type="Panel" parent="LaptopEndingUI/LaptopFrame" unique_id=1044400104]
+layout_mode = 0
+offset_left = 176.0
+offset_top = 70.0
+offset_right = 1006.0
+offset_bottom = 553.0
+
+[node name="LaptopText" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400105]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 44.0
+offset_right = 780.0
+offset_bottom = 395.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("30_pixel_font")
+theme_override_font_sizes/font_size = 34
+text = "Transmission"
+autowrap_mode = 3
+
+[node name="LaptopHint" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400106]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 418.0
+offset_right = 780.0
+offset_bottom = 458.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("30_pixel_font")
+theme_override_font_sizes/font_size = 26
+text = "[Press E]"
+horizontal_alignment = 2
+
+[node name="EndingSplashUI" type="CanvasLayer" parent="." unique_id=1044400107]
+layer = 25
+visible = false
+
+[node name="Splash" type="TextureRect" parent="EndingSplashUI" unique_id=1044400108]
+offset_right = 1920.0
+offset_bottom = 1080.0
+texture = ExtResource("31_splash_tex")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Bed" type="Sprite2D" parent="." unique_id=928521205]
 position = Vector2(238.00002, 189.99998)
 scale = Vector2(0.28819445, 0.28819448)
@@ -1018,7 +1080,8 @@ texture = ExtResource("15_gi4ji")
 
 [node name="Floor" type="Polygon2D" parent="." unique_id=1752979073]
 texture_repeat = 2
-position = Vector2(-689, -1288)
+position = Vector2(-689, -1616.2374)
+scale = Vector2(1, 0.9470584)
 color = Color(1, 1, 1, 0.95)
 texture = ExtResource("8_wood_floor_tex")
 texture_scale = Vector2(2.2, 2.2)
@@ -1077,6 +1140,7 @@ polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 
 [node name="DoorLintel" type="Polygon2D" parent="." unique_id=848713120]
+z_index = -1
 position = Vector2(-689, -1288)
 color = Color(0.86, 0.67, 0.15, 1)
 polygon = PackedVector2Array(-160, -4912, 160, -4912, 160, -4840, -160, -4840)

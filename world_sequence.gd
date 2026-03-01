@@ -26,6 +26,10 @@ extends Node2D
 @onready var timing_line: ColorRect = $MinigameUI/Panel/TimingLine
 @onready var target_zone: ColorRect = $MinigameUI/Panel/TimingLine/TargetZone
 @onready var needle: ColorRect = $MinigameUI/Panel/TimingLine/Needle
+@onready var laptop_ending_ui: CanvasLayer = $LaptopEndingUI
+@onready var laptop_ending_text: Label = $LaptopEndingUI/LaptopFrame/ScreenPanel/LaptopText
+@onready var laptop_ending_hint: Label = $LaptopEndingUI/LaptopFrame/ScreenPanel/LaptopHint
+@onready var ending_splash_ui: CanvasLayer = $EndingSplashUI
 
 @export var guard_speed := 300.0
 @export var guard_escort_speed := 470.0
@@ -270,6 +274,7 @@ var cue_four_available := false
 var ending_subtitles: Array[String] = []
 var ending_subtitle_index := 0
 var ending_active := false
+var ending_splash_active := false
 var cell_lock_icon: Sprite2D
 var hall_lock_icon: Sprite2D
 var end_room_lock_icon: Sprite2D
@@ -2300,7 +2305,7 @@ func _handle_backup_laptop_interaction() -> bool:
 	if cue_collected.size() <= 8 or not cue_collected[8]:
 		dialogue_label.text = "Need Cue 9 archive before transmitting backup call."
 		return true
-	dialogue_label.text = "Press E to use Cue 6 on laptop and call backup."
+	dialogue_label.text = "Press E to notify authorities."
 	if Input.is_action_just_pressed("interact"):
 		_start_ending_subtitles()
 	return true
@@ -2315,18 +2320,25 @@ func _start_ending_subtitles() -> void:
 	ending_subtitles.append("Survivors were extracted. Records were published.")
 	ending_subtitles.append("Case closed.\n\nTHE END")
 	player.set_physics_process(false)
-	dialogue_panel.visible = true
-	dialogue_label.text = "%s\n\n[Press E]" % ending_subtitles[ending_subtitle_index]
+	dialogue_panel.visible = false
+	_show_laptop_ending_page()
 
 func _advance_ending_subtitles() -> void:
+	if ending_splash_active:
+		return
 	ending_subtitle_index += 1
 	if ending_subtitle_index >= ending_subtitles.size():
 		ending_subtitle_index = ending_subtitles.size() - 1
-		dialogue_panel.visible = true
-		dialogue_label.text = "%s" % ending_subtitles[ending_subtitle_index]
+		laptop_ending_ui.visible = false
+		ending_splash_active = true
+		ending_splash_ui.visible = true
 		return
-	dialogue_panel.visible = true
-	dialogue_label.text = "%s\n\n[Press E]" % ending_subtitles[ending_subtitle_index]
+	_show_laptop_ending_page()
+
+func _show_laptop_ending_page(show_advance_hint: bool = true) -> void:
+	laptop_ending_ui.visible = true
+	laptop_ending_text.text = ending_subtitles[ending_subtitle_index]
+	laptop_ending_hint.text = "[Press E]" if show_advance_hint else ""
 
 func _update_cue_eleven_visibility() -> void:
 	if cue_eleven_sprite == null:
@@ -2484,8 +2496,13 @@ func _reset_to_checkpoint(index: int) -> void:
 	gallery_code_buffer = ""
 	player.clear_scripted_motion_visual()
 	ending_active = false
+	ending_splash_active = false
 	ending_subtitles.clear()
 	ending_subtitle_index = 0
+	laptop_ending_ui.visible = false
+	laptop_ending_text.text = ""
+	laptop_ending_hint.text = ""
+	ending_splash_ui.visible = false
 	spawn_fade_alpha = 1.0
 	_update_gallery_code_door()
 	call_deferred("_refresh_visibility_next_frame")

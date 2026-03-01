@@ -229,20 +229,17 @@ var upper_elevator_area: Area2D
 var upper_elevator_in_range := false
 var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
-<<<<<<< HEAD
 var gallery_code_door_blocker: StaticBody2D
 var gallery_code_blocker_shape: CollisionShape2D
 var gallery_code_lock_icon: Sprite2D
 var gallery_code_unlocked := false
 var gallery_code_entry_active := false
 var gallery_code_buffer := ""
-=======
 var cell_lock_icon: Sprite2D
 var hall_lock_icon: Sprite2D
 var end_room_lock_icon: Sprite2D
 var pre_surgery_lock_icon: Sprite2D
 var storage_lock_icon: Sprite2D
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 var visibility_fx_layer: CanvasLayer
 var visibility_fx_rect: ColorRect
 var room_vision_enabled := true
@@ -292,12 +289,9 @@ func _ready() -> void:
 	_setup_elevator_points()
 	_setup_gallery_code_door()
 	_setup_visibility_fx()
-<<<<<<< HEAD
-=======
 	_setup_door_lock_icons()
 	_refresh_door_lock_icons()
 	_setup_gallery_interior()
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 	_setup_cue_seven_pickup()
 	_setup_cue_eleven_pickup()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
@@ -1697,11 +1691,7 @@ func _setup_visibility_fx() -> void:
 	visibility_fx_rect = ColorRect.new()
 	visibility_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shader := Shader.new()
-<<<<<<< HEAD
-	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.18;\nuniform float softness = 0.09;\nuniform float dim_alpha = 0.72;\nuniform bool use_room_rect = false;\nuniform vec4 room_rect_uv = vec4(0.0, 0.0, 1.0, 1.0);\nuniform float room_edge_softness = 0.012;\nvoid fragment() {\n\tfloat reveal = 0.0;\n\tif (use_room_rect) {\n\t\tfloat left = smoothstep(room_rect_uv.x - room_edge_softness, room_rect_uv.x + room_edge_softness, SCREEN_UV.x);\n\t\tfloat top = smoothstep(room_rect_uv.y - room_edge_softness, room_rect_uv.y + room_edge_softness, SCREEN_UV.y);\n\t\tfloat right = 1.0 - smoothstep(room_rect_uv.z - room_edge_softness, room_rect_uv.z + room_edge_softness, SCREEN_UV.x);\n\t\tfloat bottom = 1.0 - smoothstep(room_rect_uv.w - room_edge_softness, room_rect_uv.w + room_edge_softness, SCREEN_UV.y);\n\t\treveal = clamp(left * top * right * bottom, 0.0, 1.0);\n\t} else {\n\t\tfloat d = distance(SCREEN_UV, center_uv);\n\t\treveal = 1.0 - smoothstep(radius, radius + softness, d);\n\t}\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
-=======
 	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.16;\nuniform float softness = 0.24;\nuniform float dim_alpha = 0.94;\nvoid fragment() {\n\tfloat d = distance(SCREEN_UV, center_uv);\n\tfloat reveal = 1.0 - smoothstep(radius, radius + softness, d);\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	visibility_fx_rect.material = mat

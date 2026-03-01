@@ -13,7 +13,9 @@ extends Node2D
 @onready var pre_surgery_door_lock: CollisionShape2D = $PreSurgeryDoorLock/CollisionShape2D
 @onready var pre_surgery_door_lintel: CanvasItem = $Blockout/EndRoomToPreDoorLintel
 @onready var dialogue_panel: Panel = $DialogueUI/Panel
+@onready var dialogue_speaker_label: Label = $DialogueUI/Panel/SpeakerText
 @onready var dialogue_label: Label = $DialogueUI/Panel/DialogueText
+@onready var dialogue_hint_label: Label = $DialogueUI/Panel/DialogueHint
 @onready var dialogue_ui: CanvasLayer = $DialogueUI
 @onready var cell_door_lock: CollisionShape2D = $CellDoorLock/CollisionShape2D
 @onready var cell_door_lintel: CanvasItem = $Blockout/CellDoorLintel
@@ -61,9 +63,17 @@ const CELL_SPAWN_SFX := preload("res://cough_double.wav")
 const INTERACT_SFX := preload("res://chips_place_1.wav")
 const DOCTOR_KILL_SFX := preload("res://squelching_1.wav")
 const BOSS_HIT_SFX := preload("res://Boss hit 1.wav")
+const CROWBAR_PICKUP_SFX := preload("res://weapon_pick_up.wav")
+const PAPER_PICKUP_SFX := preload("res://map_open.wav")
+const ELEVATOR_UP_SFX := preload("res://hydraulic_up.wav")
+const ELEVATOR_DOWN_SFX := preload("res://hydraulic_down.wav")
+const ELEVATOR_CLOSED_TEX := preload("res://elevator_closed.png")
+const ELEVATOR_HALF_TEX := preload("res://elevator_half.png")
+const ELEVATOR_OPEN_TEX := preload("res://elevator_open.png")
 const FIGHT_MUSIC := preload("res://fight.mp3")
 const ALARM_SFX := preload("res://Retro Alarm Long 02.wav")
 const BREATHING_SFX := preload("res://breathing.mp3")
+const PIXEL_FONT := preload("res://PressStart2P-Regular.ttf")
 const KIDNAPPER_PACK_ROOT := "res://Kidnapper"
 const VICTIM_PACK_ROOT := "res://Victim"
 const DOCTOR_PACK_ROOT := "res://Doc"
@@ -117,6 +127,7 @@ const CUE_SIX_INTERACT_POSITION := Vector2(875, -4214)
 const BACKUP_LAPTOP_POSITION := Vector2(-590, -7360)
 const BACKUP_LAPTOP_INTERACT_RADIUS := 280.0
 const FINAL_REQUIRED_CUES: Array[int] = [1, 2, 3, 4, 5, 6, 7, 11]
+const SPEAKER_NAMES := ["You", "Other Guy", "Doctor", "Guard", "Aaron"]
 const ROOM_CELL := Rect2(0, 0, 1200, 800)
 const ROOM_HALLWAY := Rect2(1200, -5000, 320, 5800)
 const ROOM_TURN1 := Rect2(1520, -3200, 1600, 320)
@@ -260,6 +271,9 @@ var storage_elevator_area: Area2D
 var storage_elevator_in_range := false
 var upper_elevator_area: Area2D
 var upper_elevator_in_range := false
+var storage_elevator_sprite: Sprite2D
+var upper_elevator_sprite: Sprite2D
+var elevator_animating := false
 var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
 var gallery_code_door_blocker: StaticBody2D
@@ -321,6 +335,11 @@ var dialogue_visible_count := 0
 var dialogue_type_timer := 0.0
 var dialogue_char_interval := 0.02
 var dialogue_typing_active := false
+var laptop_type_text := ""
+var laptop_type_suffix := ""
+var laptop_visible_count := 0
+var laptop_type_timer := 0.0
+var laptop_typing_active := false
 var guard_walk_step_timer := 0.0
 var other_guy_walk_step_timer := 0.0
 var doctor_walk_step_timer := 0.0
@@ -500,6 +519,7 @@ func _update_fight_audio(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	_update_fight_audio(delta)
 	_update_dialogue_typewriter(delta)
+	_update_laptop_typewriter(delta)
 	_update_keycard_fx(delta)
 	_update_inventory_visibility()
 	_update_visibility_fx()
@@ -973,19 +993,52 @@ func _show_pickup_line(line: String) -> void:
 	_show_dialogue_text(line, "", true)
 
 func _show_dialogue_text(text: String, suffix: String = "", typed: bool = false) -> void:
+	var parsed := _parse_speaker_text(text)
+	_apply_dialogue_speaker(parsed["speaker"])
 	dialogue_suffix = suffix
+	if dialogue_hint_label != null:
+		dialogue_hint_label.text = suffix.strip_edges()
+		dialogue_hint_label.visible = not dialogue_hint_label.text.is_empty()
 	if not typed:
 		dialogue_typing_active = false
 		dialogue_type_text = ""
 		dialogue_visible_count = 0
 		dialogue_type_timer = 0.0
-		dialogue_label.text = text + suffix
+		dialogue_label.text = String(parsed["body"])
 		return
-	dialogue_type_text = text
+	dialogue_type_text = String(parsed["body"])
 	dialogue_visible_count = 0
 	dialogue_type_timer = 0.0
 	dialogue_typing_active = true
-	dialogue_label.text = suffix
+	dialogue_label.text = ""
+
+func _parse_speaker_text(text: String) -> Dictionary:
+	var separator := ": "
+	var split_index := text.find(separator)
+	if split_index <= 0:
+		return {"speaker": "", "body": text}
+	var speaker := text.substr(0, split_index)
+	if not SPEAKER_NAMES.has(speaker):
+		return {"speaker": "", "body": text}
+	var body := text.substr(split_index + separator.length())
+	return {"speaker": speaker, "body": body}
+
+func _apply_dialogue_speaker(speaker: String) -> void:
+	if dialogue_speaker_label == null:
+		return
+	if speaker.is_empty():
+		dialogue_speaker_label.visible = false
+		dialogue_speaker_label.text = ""
+		return
+	dialogue_speaker_label.visible = true
+	dialogue_speaker_label.text = speaker.to_upper()
+
+func _set_dialogue_message(text: String) -> void:
+	_apply_dialogue_speaker("")
+	if dialogue_hint_label != null:
+		dialogue_hint_label.visible = false
+		dialogue_hint_label.text = ""
+	dialogue_label.text = text
 
 func _update_dialogue_typewriter(delta: float) -> void:
 	if not dialogue_typing_active:
@@ -995,27 +1048,67 @@ func _update_dialogue_typewriter(delta: float) -> void:
 		dialogue_type_timer -= dialogue_char_interval
 		dialogue_visible_count += 1
 		var visible_text := dialogue_type_text.substr(0, dialogue_visible_count)
-		dialogue_label.text = visible_text + dialogue_suffix
+		dialogue_label.text = visible_text
 		var current_char := dialogue_type_text.substr(dialogue_visible_count - 1, 1)
 		if not current_char.strip_edges().is_empty() and dialogue_audio != null:
 			dialogue_audio.pitch_scale = randf_range(0.96, 1.04)
 			dialogue_audio.play()
 	if dialogue_visible_count >= dialogue_type_text.length():
 		dialogue_typing_active = false
-		dialogue_label.text = dialogue_type_text + dialogue_suffix
+		dialogue_label.text = dialogue_type_text
 
 func _finish_dialogue_typing() -> bool:
 	if not dialogue_typing_active:
 		return false
 	dialogue_typing_active = false
 	dialogue_visible_count = dialogue_type_text.length()
-	dialogue_label.text = dialogue_type_text + dialogue_suffix
+	dialogue_label.text = dialogue_type_text
+	return true
+
+func _show_laptop_text(text: String, suffix: String = "", typed: bool = false) -> void:
+	laptop_type_suffix = suffix
+	if not typed:
+		laptop_typing_active = false
+		laptop_type_text = ""
+		laptop_visible_count = 0
+		laptop_type_timer = 0.0
+		laptop_ending_text.text = text + suffix
+		return
+	laptop_type_text = text
+	laptop_visible_count = 0
+	laptop_type_timer = 0.0
+	laptop_typing_active = true
+	laptop_ending_text.text = suffix
+
+func _update_laptop_typewriter(delta: float) -> void:
+	if not laptop_typing_active:
+		return
+	laptop_type_timer += delta
+	while laptop_type_timer >= dialogue_char_interval and laptop_visible_count < laptop_type_text.length():
+		laptop_type_timer -= dialogue_char_interval
+		laptop_visible_count += 1
+		var visible_text := laptop_type_text.substr(0, laptop_visible_count)
+		laptop_ending_text.text = visible_text + laptop_type_suffix
+		var current_char := laptop_type_text.substr(laptop_visible_count - 1, 1)
+		if not current_char.strip_edges().is_empty() and dialogue_audio != null:
+			dialogue_audio.pitch_scale = randf_range(0.96, 1.04)
+			dialogue_audio.play()
+	if laptop_visible_count >= laptop_type_text.length():
+		laptop_typing_active = false
+		laptop_ending_text.text = laptop_type_text + laptop_type_suffix
+
+func _finish_laptop_typing() -> bool:
+	if not laptop_typing_active:
+		return false
+	laptop_typing_active = false
+	laptop_visible_count = laptop_type_text.length()
+	laptop_ending_text.text = laptop_type_text + laptop_type_suffix
 	return true
 
 func _create_walk_audio_player() -> AudioStreamPlayer:
 	var audio := AudioStreamPlayer.new()
 	audio.stream = FOOTSTEP_SFX
-	audio.volume_db = -12.0
+	audio.volume_db = -20.0
 	add_child(audio)
 	return audio
 
@@ -1050,6 +1143,14 @@ func _play_interact_sfx() -> void:
 		return
 	interact_audio.pitch_scale = randf_range(0.98, 1.02)
 	interact_audio.play()
+
+func _play_elevator_sfx(stream: AudioStream) -> void:
+	if event_audio == null or stream == null:
+		return
+	event_audio.stream = stream
+	event_audio.volume_db = -6.0
+	event_audio.pitch_scale = 1.0
+	event_audio.play()
 
 func _start_guard_return_for_player() -> void:
 	_spawn_guard_at(GUARD_SPAWN_POSITION)
@@ -1221,7 +1322,7 @@ func _on_disguise_area_body_entered(body: Node2D) -> void:
 		return
 	player_in_disguise_area = true
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to wear doctor clothes."
+	_set_dialogue_message("Press E to wear doctor clothes.")
 
 func _on_disguise_area_body_exited(body: Node2D) -> void:
 	if body != player:
@@ -1233,6 +1334,8 @@ func _on_disguise_area_body_exited(body: Node2D) -> void:
 func _handle_disguise_interaction() -> void:
 	if ending_active:
 		if Input.is_action_just_pressed("interact"):
+			if _finish_laptop_typing():
+				return
 			_advance_ending_subtitles()
 		return
 	if _handle_gallery_code_lock_interaction():
@@ -1272,15 +1375,15 @@ func _handle_disguise_interaction() -> void:
 		var near_door := player.global_position.distance_to(pre_surgery_door_lock.global_position) <= PRE_SURGERY_UNLOCK_DISTANCE
 		if near_door:
 			dialogue_panel.visible = true
-			dialogue_label.text = "Press E to use Doctor ID (Cue 1) on pre-surgery room."
-			if Input.is_action_just_pressed("interact"):
-				_play_interact_sfx()
-				if _consume_key_use():
-					_unlock_pre_surgery_door()
-					dialogue_label.text = "Doctor ID accepted. Door unlocked.\n\n[Press E]"
-				else:
-					dialogue_label.text = "No cue left.\n\n[Press E]"
-			return
+		_set_dialogue_message("Press E to use Doctor ID (Cue 1) on pre-surgery room.")
+		if Input.is_action_just_pressed("interact"):
+			_play_interact_sfx()
+			if _consume_key_use():
+				_unlock_pre_surgery_door()
+				_set_dialogue_message("Doctor ID accepted. Door unlocked.")
+			else:
+				_set_dialogue_message("No cue left.")
+		return
 
 	if is_disguised and dialogue_panel.visible and Input.is_action_just_pressed("interact"):
 		dialogue_panel.visible = false
@@ -1321,7 +1424,7 @@ func _handle_gallery_code_lock_interaction() -> bool:
 	if not near_keypad:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to enter gallery door code."
+	_set_dialogue_message("Press E to enter gallery door code.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		gallery_code_entry_active = true
@@ -1332,7 +1435,7 @@ func _handle_gallery_code_lock_interaction() -> bool:
 func _refresh_gallery_code_prompt() -> void:
 	dialogue_panel.visible = true
 	var suffix := "_" if gallery_code_buffer.length() < GALLERY_CODE_MAX_LEN else ""
-	dialogue_label.text = "Enter code: %s%s\n[Enter=confirm, Backspace, Esc]" % [gallery_code_buffer, suffix]
+	_set_dialogue_message("Enter code: %s%s\n[Enter=confirm, Backspace, Esc]" % [gallery_code_buffer, suffix])
 
 func _submit_gallery_code() -> void:
 	if gallery_code_buffer == GALLERY_CODE_REQUIRED:
@@ -1342,11 +1445,11 @@ func _submit_gallery_code() -> void:
 		_update_gallery_code_door()
 		_play_door_open_sfx()
 		dialogue_panel.visible = true
-		dialogue_label.text = "Code accepted. Door unlocked.\n\n[Press E]"
+		_set_dialogue_message("Code accepted. Door unlocked.")
 		return
 	gallery_code_buffer = ""
 	dialogue_panel.visible = true
-	dialogue_label.text = "Wrong code.\n\nPress E to try again."
+	_set_dialogue_message("Wrong code.\n\nPress E to try again.")
 
 func _wear_doctor_clothes() -> void:
 	is_disguised = true
@@ -1382,6 +1485,7 @@ func _setup_keycard_fx_ui() -> void:
 	keycard_fx_label.text = ""
 	keycard_fx_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	keycard_fx_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	keycard_fx_label.add_theme_font_override("font", PIXEL_FONT)
 	keycard_fx_label.set("theme_override_font_sizes/font_size", 52)
 	keycard_fx_label.modulate = Color(1, 1, 1, 1)
 	keycard_fx_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -1487,6 +1591,8 @@ func _setup_key_hud_ui() -> void:
 	key_hud_label.position = Vector2(82, 10)
 	key_hud_label.size = Vector2(146, 64)
 	key_hud_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	key_hud_label.add_theme_font_override("font", PIXEL_FONT)
+	key_hud_label.add_theme_font_size_override("font_size", 16)
 	key_hud_label.text = "Cues: 0/%d" % CUE_DISPLAY_TOTAL
 	panel.add_child(key_hud_label)
 
@@ -1567,6 +1673,7 @@ func _setup_inventory_ui() -> void:
 	inventory_hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	inventory_hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	inventory_hover_label.add_theme_font_size_override("font_size", 28)
+	inventory_hover_label.add_theme_font_override("font", PIXEL_FONT)
 	inventory_hover_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	inventory_hover_label.text = ""
 	inventory_hover_panel.add_child(inventory_hover_label)
@@ -1721,14 +1828,14 @@ func _handle_cue_two_interaction() -> bool:
 	if not cue_two_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to pick up Cue 2."
+	_set_dialogue_message("Press E to pick up Cue 2.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(2, true)
 		_update_cue_two_visibility()
 		_show_keycard_fx_for_cue(2)
 		dialogue_panel.visible = true
-		dialogue_label.text = "Evidence (Staff Room): People are recorded as 'material' with a price tag.\n\n[Press E]"
+		_set_dialogue_message("Evidence (Staff Room): People are recorded as 'material' with a price tag.")
 	return true
 
 func _setup_cue_three_pickup() -> void:
@@ -1770,7 +1877,7 @@ func _handle_cue_three_interaction() -> bool:
 	if not cue_three_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to pick up Cue 3 (Blue Card)."
+	_set_dialogue_message("Press E to pick up Cue 3 (Blue Card).")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(3, true)
@@ -1778,7 +1885,7 @@ func _handle_cue_three_interaction() -> bool:
 		_update_cue_three_visibility()
 		_show_keycard_fx_for_cue(3)
 		dialogue_panel.visible = true
-		dialogue_label.text = "Evidence: Blue access card found in Staff Room.\n\n[Press E]"
+		_set_dialogue_message("Evidence: Blue access card found in Staff Room.")
 	return true
 
 func _setup_storage_door() -> void:
@@ -1889,15 +1996,15 @@ func _handle_storage_door_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() > 2 and cue_collected[2]:
-		dialogue_label.text = "Press E to use Blue Card (Cue 3) on Storage door."
+		_set_dialogue_message("Press E to use Blue Card (Cue 3) on Storage door.")
 		if Input.is_action_just_pressed("interact"):
 			_play_interact_sfx()
 			storage_unlocked = true
 			_update_storage_door_visibility()
 			_play_door_open_sfx()
-			dialogue_label.text = "Storage unlocked."
+			_set_dialogue_message("Storage unlocked.")
 	else:
-		dialogue_label.text = "Storage door locked. Need Blue Card."
+		_set_dialogue_message("Storage door locked. Need Blue Card.")
 	return true
 
 func _setup_cue_four_pickup() -> void:
@@ -1940,14 +2047,14 @@ func _handle_cue_four_interaction() -> bool:
 	if not cue_four_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to pick up Cue 4 (Crowbar)."
+	_set_dialogue_message("Press E to pick up Cue 4 (Crowbar).")
 	if Input.is_action_just_pressed("interact"):
-		_play_interact_sfx()
+		_play_event_sfx(CROWBAR_PICKUP_SFX, -6.0, 0.98, 1.02)
 		_set_cue_collected(4, true)
 		_update_cue_four_visibility()
 		_show_keycard_fx_for_cue(4)
 		dialogue_panel.visible = true
-		dialogue_label.text = "Evidence: Crowbar found in Storage.\n\n[Press E]"
+		_set_dialogue_message("Evidence: Crowbar found in Storage.")
 	return true
 
 func _setup_cue_six_pickup() -> void:
@@ -1991,15 +2098,15 @@ func _handle_cue_six_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() > 3 and cue_collected[3]:
-		dialogue_label.text = "Press E to pry out Cue 6 from the cabinet."
+		_set_dialogue_message("Press E to pry out Cue 6 from the cabinet.")
 		if Input.is_action_just_pressed("interact"):
 			_set_cue_collected(6, true)
 			cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
 			_update_cue_six_visibility()
 			_show_keycard_fx_for_cue(6)
-			dialogue_label.text = "%s\n\nObjective: get Cue 9 from the boss desk, then use Cue 6 on the laptop.\n\n[Press E]" % CUE_SIX_TERMINAL_KEY_TEXT
+			_set_dialogue_message("%s\n\nObjective: get Cue 9 from the boss desk, then use Cue 6 on the laptop." % CUE_SIX_TERMINAL_KEY_TEXT)
 	else:
-		dialogue_label.text = "Cabinet is jammed. You need the crowbar (Cue 4)."
+		_set_dialogue_message("Cabinet is jammed. You need the crowbar (Cue 4).")
 	return true
 
 func _setup_storage_box() -> void:
@@ -2046,20 +2153,26 @@ func _handle_storage_box_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() > 3 and cue_collected[3]:
-		dialogue_label.text = "Press E to use Crowbar (Cue 4) on the box."
+		_set_dialogue_message("Press E to use Crowbar (Cue 4) on the box.")
 		if Input.is_action_just_pressed("interact"):
-			_play_interact_sfx()
+			_play_event_sfx(PAPER_PICKUP_SFX, -7.0, 0.98, 1.02)
 			_set_cue_collected(5, true)
 			cue_notes[5] = CUE_FIVE_INVOICE_TEXT
 			_show_keycard_fx_for_cue(5)
-			dialogue_label.text = "%s\n\n[Press E]" % CUE_FIVE_INVOICE_TEXT
+			_set_dialogue_message("%s" % CUE_FIVE_INVOICE_TEXT)
 	else:
-		dialogue_label.text = "Heavy box. You need a crowbar."
+		_set_dialogue_message("Heavy box. You need a crowbar.")
 	return true
 
 func _setup_elevator_points() -> void:
 	storage_elevator_area = get_node_or_null("StorageRoom/StorageElevatorArea") as Area2D
 	upper_elevator_area = get_node_or_null("SecondFloor/UpperElevatorArea") as Area2D
+	storage_elevator_sprite = get_node_or_null("StorageRoom/StorageElevatorArea/ElevatorSprite") as Sprite2D
+	upper_elevator_sprite = get_node_or_null("SecondFloor/UpperElevatorArea/ElevatorSprite") as Sprite2D
+	if storage_elevator_sprite != null:
+		_set_elevator_state(storage_elevator_sprite, "open")
+	if upper_elevator_sprite != null:
+		_set_elevator_state(upper_elevator_sprite, "open")
 	if storage_elevator_area != null:
 		if not storage_elevator_area.body_entered.is_connected(_on_storage_elevator_body_entered):
 			storage_elevator_area.body_entered.connect(_on_storage_elevator_body_entered)
@@ -2094,33 +2207,63 @@ func _on_upper_elevator_body_exited(body: Node2D) -> void:
 func _handle_storage_elevator_interaction() -> bool:
 	if not storage_unlocked:
 		return false
+	if elevator_animating:
+		return true
 	if not storage_elevator_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to take elevator to Upper Floor."
+	_set_dialogue_message("Press E to take elevator to Upper Floor.")
 	if Input.is_action_just_pressed("interact"):
-		_play_interact_sfx()
-		var target := _get_elevator_spawn_position(upper_elevator_area, UPPER_ELEVATOR_POSITION)
-		player.global_position = target
-		storage_elevator_in_range = false
-		upper_elevator_in_range = false
-		current_checkpoint_index = 4
-		dialogue_panel.visible = false
+		_start_elevator_trip(storage_elevator_sprite, upper_elevator_sprite, _get_elevator_spawn_position(upper_elevator_area, UPPER_ELEVATOR_POSITION), ELEVATOR_UP_SFX, 4)
 	return true
 
 func _handle_upper_elevator_interaction() -> bool:
+	if elevator_animating:
+		return true
 	if not upper_elevator_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to take elevator to Storage."
+	_set_dialogue_message("Press E to take elevator to Storage.")
 	if Input.is_action_just_pressed("interact"):
-		_play_interact_sfx()
-		var target := _get_elevator_spawn_position(storage_elevator_area, STORAGE_ELEVATOR_POSITION)
-		player.global_position = target
-		upper_elevator_in_range = false
-		storage_elevator_in_range = false
-		dialogue_panel.visible = false
+		_start_elevator_trip(upper_elevator_sprite, storage_elevator_sprite, _get_elevator_spawn_position(storage_elevator_area, STORAGE_ELEVATOR_POSITION), ELEVATOR_DOWN_SFX, current_checkpoint_index)
 	return true
+
+func _start_elevator_trip(from_sprite: Sprite2D, to_sprite: Sprite2D, target: Vector2, sfx: AudioStream, checkpoint_index: int) -> void:
+	if elevator_animating:
+		return
+	elevator_animating = true
+	dialogue_panel.visible = false
+	storage_elevator_in_range = false
+	upper_elevator_in_range = false
+	player.set_physics_process(false)
+	_play_elevator_sfx(sfx)
+	_run_elevator_trip(from_sprite, to_sprite, target, checkpoint_index)
+
+func _run_elevator_trip(from_sprite: Sprite2D, to_sprite: Sprite2D, target: Vector2, checkpoint_index: int) -> void:
+	_set_elevator_state(from_sprite, "half")
+	await get_tree().create_timer(0.12).timeout
+	_set_elevator_state(from_sprite, "closed")
+	await get_tree().create_timer(0.18).timeout
+	player.global_position = target
+	current_checkpoint_index = checkpoint_index
+	_set_elevator_state(to_sprite, "closed")
+	await get_tree().create_timer(0.08).timeout
+	_set_elevator_state(to_sprite, "half")
+	await get_tree().create_timer(0.12).timeout
+	_set_elevator_state(to_sprite, "open")
+	player.set_physics_process(true)
+	elevator_animating = false
+
+func _set_elevator_state(sprite: Sprite2D, state: String) -> void:
+	if sprite == null:
+		return
+	match state:
+		"closed":
+			sprite.texture = ELEVATOR_CLOSED_TEX
+		"half":
+			sprite.texture = ELEVATOR_HALF_TEX
+		_:
+			sprite.texture = ELEVATOR_OPEN_TEX
 
 func _get_elevator_spawn_position(area: Area2D, fallback: Vector2) -> Vector2:
 	if area == null:
@@ -2280,18 +2423,18 @@ func _handle_cue_nine_interaction() -> bool:
 	if not cue_nine_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to inspect boss desk archive (Cue 9)."
+	_set_dialogue_message("Press E to inspect boss desk archive (Cue 9).")
 	if not Input.is_action_just_pressed("interact"):
 		return true
 	var missing: Array[int] = _missing_final_cues()
 	if not missing.is_empty():
-		dialogue_label.text = "Need all required cues first.\nMissing: %s" % _missing_cues_text(missing)
+		_set_dialogue_message("Need all required cues first.\nMissing: %s" % _missing_cues_text(missing))
 		return true
 	_set_cue_collected(9, true)
 	cue_notes[9] = CUE_NINE_FINAL_TEXT
 	_update_cue_nine_visibility()
 	_show_keycard_fx_for_cue(9)
-	dialogue_label.text = "%s\n\nUse Cue 6 on the laptop to call backup.\n\n[Press E]" % CUE_NINE_FINAL_TEXT
+	_set_dialogue_message("%s\n\nUse Cue 6 on the laptop to call backup." % CUE_NINE_FINAL_TEXT)
 	return true
 
 func _handle_backup_laptop_interaction() -> bool:
@@ -2300,12 +2443,12 @@ func _handle_backup_laptop_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() <= 5 or not cue_collected[5]:
-		dialogue_label.text = "Laptop requires Cue 6 terminal key."
+		_set_dialogue_message("Laptop requires Cue 6 terminal key.")
 		return true
 	if cue_collected.size() <= 8 or not cue_collected[8]:
-		dialogue_label.text = "Need Cue 9 archive before transmitting backup call."
+		_set_dialogue_message("Need Cue 9 archive before transmitting backup call.")
 		return true
-	dialogue_label.text = "Press E to notify authorities."
+	_set_dialogue_message("Press E to notify authorities.")
 	if Input.is_action_just_pressed("interact"):
 		_start_ending_subtitles()
 	return true
@@ -2337,8 +2480,8 @@ func _advance_ending_subtitles() -> void:
 
 func _show_laptop_ending_page(show_advance_hint: bool = true) -> void:
 	laptop_ending_ui.visible = true
-	laptop_ending_text.text = ending_subtitles[ending_subtitle_index]
 	laptop_ending_hint.text = "[Press E]" if show_advance_hint else ""
+	_show_laptop_text(ending_subtitles[ending_subtitle_index], "", true)
 
 func _update_cue_eleven_visibility() -> void:
 	if cue_eleven_sprite == null:
@@ -2383,14 +2526,14 @@ func _handle_cue_eleven_interaction() -> bool:
 	if not cue_eleven_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to inspect Cue 11."
+	_set_dialogue_message("Press E to inspect Cue 11.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(11, true)
 		cue_notes[11] = CUE_ELEVEN_CHARITY_TEXT
 		_update_cue_eleven_visibility()
 		_show_keycard_fx_for_cue(11)
-		dialogue_label.text = "%s\n\n[Press E]" % CUE_ELEVEN_CHARITY_TEXT
+		_set_dialogue_message("%s" % CUE_ELEVEN_CHARITY_TEXT)
 	return true
 
 func _update_cue_seven_visibility() -> void:
@@ -2421,7 +2564,7 @@ func _handle_cue_seven_interaction() -> bool:
 	if not cue_seven_in_range:
 		return false
 	dialogue_panel.visible = true
-	dialogue_label.text = "Press E to inspect statue fragment (Cue 7)."
+	_set_dialogue_message("Press E to inspect statue fragment (Cue 7).")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(7, true)
@@ -2429,7 +2572,7 @@ func _handle_cue_seven_interaction() -> bool:
 		current_checkpoint_index = 4
 		_update_cue_seven_visibility()
 		_show_keycard_fx_for_cue(7)
-		dialogue_label.text = "%s\n\n[Press E]" % CUE_SEVEN_STATUE_TEXT
+		_set_dialogue_message("%s" % CUE_SEVEN_STATUE_TEXT)
 	return true
 
 func _refresh_key_hud() -> void:
@@ -2500,6 +2643,11 @@ func _reset_to_checkpoint(index: int) -> void:
 	ending_subtitles.clear()
 	ending_subtitle_index = 0
 	laptop_ending_ui.visible = false
+	laptop_typing_active = false
+	laptop_type_text = ""
+	laptop_type_suffix = ""
+	laptop_visible_count = 0
+	laptop_type_timer = 0.0
 	laptop_ending_text.text = ""
 	laptop_ending_hint.text = ""
 	ending_splash_ui.visible = false
@@ -2753,4 +2901,4 @@ func _handle_checkpoint_cheat_input() -> void:
 
 	_restart_from_checkpoint(next_index)
 	dialogue_panel.visible = true
-	dialogue_label.text = "Cheat checkpoint: %s\n\n[Press E]" % checkpoint_names[current_checkpoint_index]
+	_set_dialogue_message("Cheat checkpoint: %s" % checkpoint_names[current_checkpoint_index])

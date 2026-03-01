@@ -22,7 +22,7 @@ func _ready() -> void:
 	disguise_frames = _build_pack_frames(DISGUISE_PACK_ROOT)
 	walk_audio = AudioStreamPlayer.new()
 	walk_audio.stream = WALK_SFX
-	walk_audio.volume_db = -12.0
+	walk_audio.volume_db = -20.0
 	add_child(walk_audio)
 	set_default_visual()
 

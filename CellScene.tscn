@@ -15,7 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://b1ceyo8eyvc3j" path="res://clock.png" id="16_clock_tex"]
 [ext_resource type="Texture2D" uid="uid://d3cv2diojbbt4" path="res://bookshelf.png" id="17_bookshelf_tex"]
 [ext_resource type="Texture2D" uid="uid://mpjwnyt67m1g" path="res://cue11.png" id="18_cue11_tex"]
-[ext_resource type="Texture2D" uid="uid://txegduofpn5q" path="res://elevator.png" id="19_elevator_tex"]
 [ext_resource type="Texture2D" uid="uid://np8ie3ob3ser" path="res://box.png" id="20_box_tex"]
 [ext_resource type="Texture2D" uid="uid://bsixs0c3c1pcu" path="res://picsnig/cue2.png" id="20_cue2_tex"]
 [ext_resource type="Texture2D" uid="uid://ctn74o1kk7nxl" path="res://picsnig/cue3.png" id="20_cue3_tex"]
@@ -36,6 +35,7 @@
 [ext_resource type="Texture2D" uid="uid://5dsbmuvbwwfl" path="res://laptop.png" id="29_laptop_tex"]
 [ext_resource type="FontFile" uid="uid://d18xj71bqx3la" path="res://PressStart2P-Regular.ttf" id="30_pixel_font"]
 [ext_resource type="Texture2D" uid="uid://cd2a3rjfq5ulj" path="res://splash.jpg" id="31_splash_tex"]
+[ext_resource type="Texture2D" uid="uid://cvn4h4v7fnu61" path="res://elevator_open.png" id="32_elevator_open_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -696,9 +696,9 @@ shape = SubResource("CircleShape2D_elevator_interact")
 
 [node name="ElevatorSprite" type="Sprite2D" parent="StorageRoom/StorageElevatorArea" unique_id=1701100006]
 z_index = 4
-position = Vector2(60.000008, 46.999817)
-scale = Vector2(0.23221113, 0.232174)
-texture = ExtResource("19_elevator_tex")
+position = Vector2(50.999947, 54.000095)
+scale = Vector2(0.6092058, 0.6092058)
+texture = ExtResource("32_elevator_open_tex")
 
 [node name="StorageBox" type="Area2D" parent="StorageRoom" unique_id=1701100011]
 position = Vector2(-91.99994, -3920)
@@ -850,19 +850,19 @@ texture = ExtResource("28_keypad_tex")
 position = Vector2(-2.437, -5041.448)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100008]
-position = Vector2(-759.563, -15.551758)
+position = Vector2(-780.563, -18.551758)
 shape = SubResource("CircleShape2D_elevator_interact")
 
 [node name="ElevatorSprite" type="Sprite2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100009]
 z_index = 4
-position = Vector2(-789.563, -152.55183)
-scale = Vector2(0.232, 0.232)
-texture = ExtResource("19_elevator_tex")
+position = Vector2(-792.56305, -147.55183)
+scale = Vector2(0.609, 0.609)
+texture = ExtResource("32_elevator_open_tex")
 
 [node name="StorageWallLeft" type="Polygon2D" parent="SecondFloor/UpperElevatorArea/ElevatorSprite" unique_id=1013220356]
 z_index = -1
-position = Vector2(15264.615, 5021.553)
-scale = Vector2(20.922457, 1.2931036)
+position = Vector2(5488.5464, 1883.1503)
+scale = Vector2(7.501286, 0.48776028)
 color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
@@ -926,15 +926,39 @@ offset_top = 800.0
 offset_right = 1820.0
 offset_bottom = 1030.0
 
+[node name="SpeakerText" type="Label" parent="DialogueUI/Panel" unique_id=1044400109]
+visible = false
+layout_mode = 0
+offset_left = 28.0
+offset_top = 16.0
+offset_right = 500.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(0.95, 0.82, 0.22, 1)
+theme_override_fonts/font = ExtResource("30_pixel_font")
+theme_override_font_sizes/font_size = 18
+text = "[YOU]:"
+
 [node name="DialogueText" type="Label" parent="DialogueUI/Panel" unique_id=1563717555]
 layout_mode = 0
 offset_left = 28.0
-offset_top = 20.0
+offset_top = 56.0
 offset_right = 1690.0
-offset_bottom = 196.0
+offset_bottom = 152.0
+theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 28
 text = "Dialogue"
 autowrap_mode = 3
+
+[node name="DialogueHint" type="Label" parent="DialogueUI/Panel" unique_id=1683745001]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 182.0
+offset_right = 520.0
+offset_bottom = 214.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.5)
+theme_override_fonts/font = ExtResource("30_pixel_font")
+theme_override_font_sizes/font_size = 18
+text = "[Press E]"
 
 [node name="MinigameUI" type="CanvasLayer" parent="." unique_id=500443876]
 layer = 10
@@ -951,6 +975,7 @@ offset_left = 30.0
 offset_top = 20.0
 offset_right = 770.0
 offset_bottom = 70.0
+theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 30
 text = "Press E when marker hits the green zone"
 horizontal_alignment = 1
@@ -961,6 +986,7 @@ offset_left = 30.0
 offset_top = 95.0
 offset_right = 770.0
 offset_bottom = 128.0
+theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 24
 text = "Resist: 0/5"
 horizontal_alignment = 1
@@ -1013,17 +1039,17 @@ stretch_mode = 5
 
 [node name="ScreenPanel" type="Panel" parent="LaptopEndingUI/LaptopFrame" unique_id=1044400104]
 layout_mode = 0
-offset_left = 176.0
-offset_top = 70.0
-offset_right = 1006.0
-offset_bottom = 553.0
+offset_left = 212.0
+offset_top = 86.0
+offset_right = 970.0
+offset_bottom = 517.0
 
 [node name="LaptopText" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400105]
 layout_mode = 0
-offset_left = 56.0
-offset_top = 44.0
-offset_right = 780.0
-offset_bottom = 395.0
+offset_left = 72.0
+offset_top = 54.0
+offset_right = 690.0
+offset_bottom = 320.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 34
@@ -1032,11 +1058,11 @@ autowrap_mode = 3
 
 [node name="LaptopHint" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400106]
 layout_mode = 0
-offset_left = 56.0
-offset_top = 418.0
-offset_right = 780.0
-offset_bottom = 458.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+offset_left = 72.0
+offset_top = 372.0
+offset_right = 690.0
+offset_bottom = 412.0
+theme_override_colors/font_color = Color(0, 0, 0, 0.35)
 theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 26
 text = "[Press E]"
@@ -1223,7 +1249,7 @@ texture = ExtResource("27_nine_tex")
 shape = SubResource("CircleShape2D_cue_interact_small")
 
 [node name="20Bbe2Fb0Ca1f86b9a851Aa450f13d7489Bfbf67d68c53b6Ffcf7Ba34711d11a" type="Sprite2D" parent="." unique_id=1730021127]
-z_index = -10
+z_index = -20
 position = Vector2(181.00003, -3737)
 rotation = -3.1415927
 scale = Vector2(0.34601638, 0.26130113)

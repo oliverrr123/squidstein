@@ -89,7 +89,7 @@ const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
 const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
 const GALLERY_STATUE_POSITION := Vector2(0, -5420)
 const CUE_SEVEN_STATUE_TEXT := "Cue 7 (Statue): Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
-const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\n\nLikely a PR shield to look untouchable while hiding what happens in this facility."
+const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\nAn internal note repeats the campaign year: 2014.\n\nThis likely doubles as the gallery door code."
 const GALLERY_CODE_REQUIRED := "2014"
 const GALLERY_CODE_MAX_LEN := 4
 const ROOM_CELL := Rect2(0, 0, 1200, 800)
@@ -229,20 +229,17 @@ var upper_elevator_area: Area2D
 var upper_elevator_in_range := false
 var storage_door_blocker: StaticBody2D
 var storage_door_sprite: Sprite2D
-<<<<<<< HEAD
 var gallery_code_door_blocker: StaticBody2D
 var gallery_code_blocker_shape: CollisionShape2D
 var gallery_code_lock_icon: Sprite2D
 var gallery_code_unlocked := false
 var gallery_code_entry_active := false
 var gallery_code_buffer := ""
-=======
 var cell_lock_icon: Sprite2D
 var hall_lock_icon: Sprite2D
 var end_room_lock_icon: Sprite2D
 var pre_surgery_lock_icon: Sprite2D
 var storage_lock_icon: Sprite2D
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 var visibility_fx_layer: CanvasLayer
 var visibility_fx_rect: ColorRect
 var room_vision_enabled := true
@@ -292,12 +289,9 @@ func _ready() -> void:
 	_setup_elevator_points()
 	_setup_gallery_code_door()
 	_setup_visibility_fx()
-<<<<<<< HEAD
-=======
 	_setup_door_lock_icons()
 	_refresh_door_lock_icons()
 	_setup_gallery_interior()
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 	_setup_cue_seven_pickup()
 	_setup_cue_eleven_pickup()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
@@ -1320,7 +1314,7 @@ func _get_collected_cue_count() -> int:
 
 func _setup_cue_two_pickup() -> void:
 	cue_two_pickup = null
-	cue_two_sprite = null
+	cue_two_sprite = _ensure_runtime_cue_sprite(cue_two_sprite, "Cue2Sprite", 2, CUE_TWO_PICKUP_POSITION, Vector2(0.24, 0.24))
 	cue_two_in_range = false
 	_update_cue_two_visibility()
 
@@ -1364,7 +1358,7 @@ func _handle_cue_two_interaction() -> bool:
 
 func _setup_cue_three_pickup() -> void:
 	cue_three_pickup = null
-	cue_three_sprite = null
+	cue_three_sprite = _ensure_runtime_cue_sprite(cue_three_sprite, "Cue3Sprite", 3, CUE_THREE_PICKUP_POSITION, Vector2(0.24, 0.24))
 	cue_three_in_range = false
 	_update_cue_three_visibility()
 
@@ -1468,6 +1462,11 @@ func _setup_door_lock_icons() -> void:
 	storage_lock_icon.z_index = 20
 	add_child(storage_lock_icon)
 
+func _setup_gallery_interior() -> void:
+	# Gallery props are now authored directly in CellScene.tscn via inspector.
+	# Keep this function as a compatibility no-op for older call sites.
+	pass
+
 func _update_storage_door_visibility() -> void:
 	if storage_door_blocker != null:
 		storage_door_blocker.collision_layer = 1 if not storage_unlocked else 0
@@ -1519,7 +1518,7 @@ func _handle_storage_door_interaction() -> bool:
 
 func _setup_cue_four_pickup() -> void:
 	cue_four_pickup = null
-	cue_four_sprite = null
+	cue_four_sprite = _ensure_runtime_cue_sprite(cue_four_sprite, "Cue4Sprite", 4, STORAGE_CUE_FOUR_POSITION, Vector2(0.2, 0.2))
 	cue_four_in_range = false
 	_update_cue_four_visibility()
 
@@ -1697,11 +1696,7 @@ func _setup_visibility_fx() -> void:
 	visibility_fx_rect = ColorRect.new()
 	visibility_fx_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var shader := Shader.new()
-<<<<<<< HEAD
 	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.18;\nuniform float softness = 0.09;\nuniform float dim_alpha = 0.72;\nuniform bool use_room_rect = false;\nuniform vec4 room_rect_uv = vec4(0.0, 0.0, 1.0, 1.0);\nuniform float room_edge_softness = 0.012;\nvoid fragment() {\n\tfloat reveal = 0.0;\n\tif (use_room_rect) {\n\t\tfloat left = smoothstep(room_rect_uv.x - room_edge_softness, room_rect_uv.x + room_edge_softness, SCREEN_UV.x);\n\t\tfloat top = smoothstep(room_rect_uv.y - room_edge_softness, room_rect_uv.y + room_edge_softness, SCREEN_UV.y);\n\t\tfloat right = 1.0 - smoothstep(room_rect_uv.z - room_edge_softness, room_rect_uv.z + room_edge_softness, SCREEN_UV.x);\n\t\tfloat bottom = 1.0 - smoothstep(room_rect_uv.w - room_edge_softness, room_rect_uv.w + room_edge_softness, SCREEN_UV.y);\n\t\treveal = clamp(left * top * right * bottom, 0.0, 1.0);\n\t} else {\n\t\tfloat d = distance(SCREEN_UV, center_uv);\n\t\treveal = 1.0 - smoothstep(radius, radius + softness, d);\n\t}\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
-=======
-	shader.code = "shader_type canvas_item;\nuniform vec2 center_uv = vec2(0.5, 0.5);\nuniform float radius = 0.16;\nuniform float softness = 0.24;\nuniform float dim_alpha = 0.94;\nvoid fragment() {\n\tfloat d = distance(SCREEN_UV, center_uv);\n\tfloat reveal = 1.0 - smoothstep(radius, radius + softness, d);\n\tfloat a = dim_alpha * (1.0 - reveal);\n\tCOLOR = vec4(0.0, 0.0, 0.0, a);\n}\n"
->>>>>>> 2b51995396f95d59fa409c69a54e2625ccd5a447
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	visibility_fx_rect.material = mat
@@ -1710,7 +1705,9 @@ func _setup_visibility_fx() -> void:
 func _update_visibility_fx() -> void:
 	if visibility_fx_rect == null:
 		return
-	visibility_fx_rect.visible = room_vision_enabled and not dialogue_panel.visible and not minigame_ui.visible
+	# Keep room-vision active during dialogue (including cue pickups).
+	# Only hide it for minigames/explicit disabled states.
+	visibility_fx_rect.visible = room_vision_enabled and not minigame_ui.visible
 	if not visibility_fx_rect.visible:
 		return
 	var mat := visibility_fx_rect.material as ShaderMaterial
@@ -1750,9 +1747,24 @@ func _get_current_room_world_rect() -> Rect2:
 
 func _setup_cue_seven_pickup() -> void:
 	cue_seven_pickup = null
-	cue_seven_sprite = null
+	cue_seven_sprite = _ensure_runtime_cue_sprite(cue_seven_sprite, "Cue7Sprite", 7, GALLERY_STATUE_POSITION, Vector2(0.22, 0.22))
 	cue_seven_in_range = false
 	_update_cue_seven_visibility()
+
+func _ensure_runtime_cue_sprite(existing: Sprite2D, node_name: String, cue_index: int, world_pos: Vector2, cue_scale: Vector2) -> Sprite2D:
+	if existing != null and is_instance_valid(existing):
+		return existing
+	var from_scene := get_node_or_null(node_name) as Sprite2D
+	if from_scene != null:
+		return from_scene
+	var sprite := Sprite2D.new()
+	sprite.name = node_name
+	sprite.texture = _get_key_texture_for_uses(cue_index)
+	sprite.global_position = world_pos
+	sprite.scale = cue_scale
+	sprite.z_index = 6
+	add_child(sprite)
+	return sprite
 
 func _setup_cue_eleven_pickup() -> void:
 	cue_eleven_sprite = get_node_or_null("SecondFloor/GalleryCue11") as Sprite2D

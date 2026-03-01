@@ -4,10 +4,8 @@
 [ext_resource type="Script" uid="uid://c236u2qaywy5h" path="res://world_sequence.gd" id="3_world_script"]
 [ext_resource type="AudioStream" uid="uid://cs7i0ihk3rmlo" path="res://song.mp3" id="4_music"]
 [ext_resource type="Texture2D" uid="uid://ucg72flw4l6f" path="res://floor.webp" id="5_floor_tex"]
-[ext_resource type="Texture2D" uid="uid://cqxolsuq2chjx" path="res://doc.png" id="7_doc_tex"]
 [ext_resource type="Texture2D" uid="uid://gegxg58c26b0" path="res://bedhospital.jpg" id="8_bed_tex"]
 [ext_resource type="Texture2D" uid="uid://1iukcae6qgcq" path="res://wood_floor.svg" id="8_wood_floor_tex"]
-[ext_resource type="Texture2D" uid="uid://bdw3v8ubheqjx" path="res://prisoner.png" id="10_prisoner_tex"]
 [ext_resource type="Texture2D" uid="uid://ckceaorxnwden" path="res://bed.jpg" id="10_qa2ai"]
 [ext_resource type="Texture2D" uid="uid://dlyku8s33sksw" path="res://chair.png" id="11_sax3l"]
 [ext_resource type="Texture2D" uid="uid://8wkpamx3ovxc" path="res://hospital_floor.png" id="12_hospital_floor_tex"]
@@ -139,6 +137,24 @@ radius = 82.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_storage_box_interact"]
 radius = 82.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_clock_blocker"]
+size = Vector2(72, 178)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_bookshelf_blocker"]
+size = Vector2(190, 180)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_boss_desk_blocker"]
+size = Vector2(430, 190)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_left_sofa_blocker"]
+size = Vector2(92, 170)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_bottom_sofa_blocker"]
+size = Vector2(204, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_portrait_blocker"]
+size = Vector2(130, 196)
 
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
@@ -658,11 +674,11 @@ polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -4840, -980, -4840)
 
 [node name="TopWall" type="Polygon2D" parent="SecondFloor" unique_id=299671053]
 color = Color(0.16, 0.12, 0.09, 1)
-polygon = PackedVector2Array(-980, -6200, -160, -6200, -160, -6128, -980, -6128)
+polygon = PackedVector2Array(-980, -6200, -849, -6200, -849, -6128, -980, -6128)
 
 [node name="TopWallRight" type="Polygon2D" parent="SecondFloor" unique_id=299671054]
 color = Color(0.16, 0.12, 0.09, 1)
-polygon = PackedVector2Array(160, -6200, 980, -6200, 980, -6128, 160, -6128)
+polygon = PackedVector2Array(-529, -6200, 980, -6200, 980, -6128, -529, -6128)
 
 [node name="BottomWallLeft" type="Polygon2D" parent="SecondFloor" unique_id=145019786]
 color = Color(0.16, 0.12, 0.09, 1)
@@ -683,10 +699,10 @@ polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 [node name="Walls" type="StaticBody2D" parent="SecondFloor" unique_id=827673024]
 
 [node name="Top" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=138097635]
-polygon = PackedVector2Array(-980, -6200, -160, -6200, -160, -6128, -980, -6128)
+polygon = PackedVector2Array(-980, -6200, -849, -6200, -849, -6128, -980, -6128)
 
 [node name="TopRight" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=138097636]
-polygon = PackedVector2Array(160, -6200, 980, -6200, 980, -6128, 160, -6128)
+polygon = PackedVector2Array(-529, -6200, 980, -6200, 980, -6128, -529, -6128)
 
 [node name="BottomLeft" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=1021589088]
 polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
@@ -705,10 +721,29 @@ position = Vector2(566, -5985)
 scale = Vector2(0.18110606, 0.18260276)
 texture = ExtResource("16_clock_tex")
 
+[node name="GalleryClockBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100017]
+position = Vector2(566, -5985)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryClockBlocker" unique_id=1701100018]
+shape = SubResource("RectangleShape2D_gallery_clock_blocker")
+
 [node name="GalleryBookshelf" type="Sprite2D" parent="SecondFloor" unique_id=1701100002]
 position = Vector2(770, -5992)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("17_bookshelf_tex")
+
+[node name="GalleryBookshelfBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100019]
+position = Vector2(770, -5992)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryBookshelfBlocker" unique_id=1701100020]
+shape = SubResource("RectangleShape2D_gallery_bookshelf_blocker")
+
+[node name="GalleryBossDeskBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100031]
+position = Vector2(-20, -5940)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryBossDeskBlocker" unique_id=1701100032]
+position = Vector2(-705, -1297)
+shape = SubResource("RectangleShape2D_gallery_boss_desk_blocker")
 
 [node name="GalleryCue11" type="Sprite2D" parent="SecondFloor" unique_id=1701100010]
 z_index = 4
@@ -717,7 +752,7 @@ scale = Vector2(0.24020548, 0.24534261)
 texture = ExtResource("18_cue11_tex")
 
 [node name="GalleryCodeDoorBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100014]
-position = Vector2(0, -6164)
+position = Vector2(-689, -6164)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryCodeDoorBlocker" unique_id=1701100015]
 shape = SubResource("RectangleShape2D_hallway_bottom")
@@ -883,25 +918,55 @@ position = Vector2(-836.99994, -5721)
 scale = Vector2(0.2751868, 0.23185465)
 texture = ExtResource("21_1wct6")
 
+[node name="GalleryLeftSofaTopBlocker" type="StaticBody2D" parent="." unique_id=1701100021]
+position = Vector2(-836.99994, -5721)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaTopBlocker" unique_id=1701100022]
+shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
+
 [node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d" type="Sprite2D" parent="." unique_id=355713573]
 position = Vector2(724, -5015.0005)
 scale = Vector2(0.29537672, 0.3307927)
 texture = ExtResource("22_sjfai")
+
+[node name="GalleryBottomSofaRightBlocker" type="StaticBody2D" parent="." unique_id=1701100023]
+position = Vector2(724, -5015.0005)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryBottomSofaRightBlocker" unique_id=1701100024]
+shape = SubResource("RectangleShape2D_gallery_bottom_sofa_blocker")
 
 [node name="196Ce298c6745b97f8322f6e69189b69Cd81b546a4f6b46719596b17612987c7" type="Sprite2D" parent="." unique_id=364309992]
 position = Vector2(-836.99994, -5484)
 scale = Vector2(0.2751868, 0.23185465)
 texture = ExtResource("21_1wct6")
 
+[node name="GalleryLeftSofaBottomBlocker" type="StaticBody2D" parent="." unique_id=1701100025]
+position = Vector2(-836.99994, -5484)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaBottomBlocker" unique_id=1701100026]
+shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
+
 [node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d2" type="Sprite2D" parent="." unique_id=54717235]
 position = Vector2(396.99997, -5010.0005)
 scale = Vector2(0.29537672, 0.3307927)
 texture = ExtResource("22_sjfai")
 
+[node name="GalleryBottomSofaLeftBlocker" type="StaticBody2D" parent="." unique_id=1701100027]
+position = Vector2(396.99997, -5010.0005)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryBottomSofaLeftBlocker" unique_id=1701100028]
+shape = SubResource("RectangleShape2D_gallery_bottom_sofa_blocker")
+
 [node name="43170b6Aa9Baa8b110b0c553c948Dae6b52a458b01955a164c74e28725e6Bc3b" type="Sprite2D" parent="." unique_id=1164932428]
 position = Vector2(184, -4988)
 scale = Vector2(0.38043478, 0.27173913)
 texture = ExtResource("23_jxdyh")
+
+[node name="GalleryPortraitBlocker" type="StaticBody2D" parent="." unique_id=1701100029]
+position = Vector2(184, -4988)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryPortraitBlocker" unique_id=1701100030]
+shape = SubResource("RectangleShape2D_gallery_portrait_blocker")
 
 [node name="7Da8a2809475220Fdc175a9f6064948791806Bc588463b8e62a3b5b7e21e9Fd8" type="Sprite2D" parent="." unique_id=520597397]
 position = Vector2(-721, -7467)

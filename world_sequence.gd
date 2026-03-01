@@ -78,11 +78,12 @@ const CUE_THREE_PICKUP_POSITION := Vector2(4960, -5200) # Staff Room desk
 const STORAGE_DOOR_POSITION := Vector2(1168, -3920) # Hallway wall gateway to storage area
 const STORAGE_DOOR_INTERACT_HALF_WIDTH := 220.0
 const STORAGE_DOOR_INTERACT_HALF_HEIGHT := 260.0
-const STORAGE_CUE_FOUR_POSITION := Vector2(460, -4040)
+const STORAGE_CUE_FOUR_POSITION := Vector2(1980, 560)
 const STORAGE_BOX_POSITION := Vector2(120, -3920)
 const STORAGE_ELEVATOR_POSITION := Vector2(536, -3760)
 const UPPER_ELEVATOR_POSITION := Vector2(0, -5040)
 const CUE_FIVE_INVOICE_TEXT := "Invoice (Cue 5):\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
+const CUE_SIX_TERMINAL_KEY_TEXT := "Cue 6 (Terminal Key): Encrypted backup authorization token.\nUse it on the boss laptop to request outside backup."
 const HALL_DOOR_POSITION := Vector2(1552, 400)
 const END_ROOM_DOOR_POSITION := Vector2(3472, -4920)
 const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
@@ -90,8 +91,14 @@ const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
 const GALLERY_STATUE_POSITION := Vector2(0, -5420)
 const CUE_SEVEN_STATUE_TEXT := "Cue 7 (Statue): Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
 const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\nAn internal note repeats the campaign year: 2014.\n\nThis likely doubles as the gallery door code."
+const CUE_NINE_FINAL_TEXT := "Cue 9 (Boss Desk Archive): Consolidated ledger linking donations, shipping fronts, and staff payments.\nThis is the final proof package."
 const GALLERY_CODE_REQUIRED := "2014"
 const GALLERY_CODE_MAX_LEN := 4
+const CUE_NINE_DESK_POSITION := Vector2(-721, -7428)
+const CUE_SIX_PICKUP_POSITION := Vector2(951, -4214)
+const CUE_SIX_INTERACT_POSITION := Vector2(875, -4214)
+const BACKUP_LAPTOP_POSITION := Vector2(-456, -7306)
+const FINAL_REQUIRED_CUES: Array[int] = [1, 2, 3, 4, 5, 6, 7, 11]
 const ROOM_CELL := Rect2(0, 0, 1200, 800)
 const ROOM_HALLWAY := Rect2(1200, -5000, 320, 5800)
 const ROOM_TURN1 := Rect2(1520, -3200, 1600, 320)
@@ -216,9 +223,11 @@ var cue_three_in_range := false
 var cue_four_pickup: Area2D
 var cue_four_sprite: Sprite2D
 var cue_four_in_range := false
+var cue_six_sprite: Sprite2D
 var cue_seven_pickup: Area2D
 var cue_seven_sprite: Sprite2D
 var cue_seven_in_range := false
+var cue_nine_sprite: Sprite2D
 var cue_eleven_sprite: Sprite2D
 var storage_box_area: Area2D
 var storage_box_sprite: Sprite2D
@@ -235,6 +244,9 @@ var gallery_code_lock_icon: Sprite2D
 var gallery_code_unlocked := false
 var gallery_code_entry_active := false
 var gallery_code_buffer := ""
+var ending_subtitles: Array[String] = []
+var ending_subtitle_index := 0
+var ending_active := false
 var cell_lock_icon: Sprite2D
 var hall_lock_icon: Sprite2D
 var end_room_lock_icon: Sprite2D
@@ -265,6 +277,8 @@ var checkpoint_names: Array[String] = [
 	"Gallery",
 ]
 var current_checkpoint_index := 0
+var guard_parent_node: Node
+var guard_parent_index := -1
 
 func _ready() -> void:
 	dialogue_ui.layer = 35
@@ -285,6 +299,7 @@ func _ready() -> void:
 	_setup_cue_three_pickup()
 	_setup_storage_door()
 	_setup_cue_four_pickup()
+	_setup_cue_six_pickup()
 	_setup_storage_box()
 	_setup_elevator_points()
 	_setup_gallery_code_door()
@@ -293,6 +308,7 @@ func _ready() -> void:
 	_refresh_door_lock_icons()
 	_setup_gallery_interior()
 	_setup_cue_seven_pickup()
+	_setup_cue_nine_pickup()
 	_setup_cue_eleven_pickup()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
 	if pre_lock_body != null:
@@ -302,6 +318,9 @@ func _ready() -> void:
 		#(music_player.stream as AudioStreamMP3).loop = true
 	#if not music_player.playing:
 		#music_player.play()
+	guard_parent_node = guard.get_parent()
+	if guard_parent_node != null:
+		guard_parent_index = guard.get_index()
 	trigger_area.body_entered.connect(_on_story_trigger_body_entered)
 	disguise_area.body_entered.connect(_on_disguise_area_body_entered)
 	disguise_area.body_exited.connect(_on_disguise_area_body_exited)
@@ -342,7 +361,7 @@ func _physics_process(delta: float) -> void:
 				_update_other_guy_visual(other_guy.global_position - previous_position)
 			if reached:
 				_update_other_guy_visual(Vector2.ZERO)
-				guard.visible = false
+				_despawn_guard()
 				other_guy.visible = false
 				dialogue_panel.visible = false
 				state = SequenceState.WAIT_FOR_RETURN
@@ -724,8 +743,7 @@ func _start_guard_sequence() -> void:
 	player.set_physics_process(true)
 	state = SequenceState.GUARD_TO_GUY
 	path_index = 0
-	guard.visible = true
-	guard.global_position = GUARD_SPAWN_POSITION
+	_spawn_guard_at(GUARD_SPAWN_POSITION)
 
 func _show_epilogue(line: String) -> void:
 	dialogue_panel.visible = true
@@ -737,8 +755,7 @@ func _show_pickup_line(line: String) -> void:
 	dialogue_label.text = line
 
 func _start_guard_return_for_player() -> void:
-	guard.visible = true
-	guard.global_position = GUARD_SPAWN_POSITION
+	_spawn_guard_at(GUARD_SPAWN_POSITION)
 	guard_return_phase = 0
 	state = SequenceState.GUARD_TO_PLAYER
 
@@ -870,7 +887,22 @@ func _update_guard_exit(delta: float) -> void:
 	var reached_exit := _move_along_path(guard, guard_leave_end_room_path, guard_speed, delta)
 	if reached_exit:
 		guard_exit_running = false
-		guard.visible = false
+		_despawn_guard()
+
+func _spawn_guard_at(spawn_position: Vector2) -> void:
+	if guard.get_parent() == null and guard_parent_node != null:
+		guard_parent_node.add_child(guard)
+		if guard_parent_index >= 0 and guard_parent_index < guard_parent_node.get_child_count():
+			guard_parent_node.move_child(guard, guard_parent_index)
+	guard.visible = true
+	guard.global_position = spawn_position
+	guard.velocity = Vector2.ZERO
+	_update_guard_visual(Vector2.ZERO)
+
+func _despawn_guard() -> void:
+	guard.velocity = Vector2.ZERO
+	if guard.get_parent() != null:
+		guard.get_parent().remove_child(guard)
 
 func _on_disguise_area_body_entered(body: Node2D) -> void:
 	if body != player or state != SequenceState.DONE or is_disguised:
@@ -887,6 +919,10 @@ func _on_disguise_area_body_exited(body: Node2D) -> void:
 		dialogue_panel.visible = false
 
 func _handle_disguise_interaction() -> void:
+	if ending_active:
+		if Input.is_action_just_pressed("interact"):
+			_advance_ending_subtitles()
+		return
 	if _handle_gallery_code_lock_interaction():
 		return
 	if _handle_cue_two_interaction():
@@ -901,9 +937,15 @@ func _handle_disguise_interaction() -> void:
 		return
 	if _handle_cue_four_interaction():
 		return
+	if _handle_cue_six_interaction():
+		return
 	if _handle_storage_box_interaction():
 		return
 	if _handle_cue_seven_interaction():
+		return
+	if _handle_cue_nine_interaction():
+		return
+	if _handle_backup_laptop_interaction():
 		return
 	if _handle_cue_eleven_interaction():
 		return
@@ -1283,8 +1325,12 @@ func _get_default_cue_note(index_1_based: int) -> String:
 			return "Cue 4 (Crowbar): Tool used to force open sealed crates and boxes."
 		5:
 			return CUE_FIVE_INVOICE_TEXT
+		6:
+			return CUE_SIX_TERMINAL_KEY_TEXT
 		7:
 			return CUE_SEVEN_STATUE_TEXT
+		9:
+			return CUE_NINE_FINAL_TEXT
 		11:
 			return CUE_ELEVEN_CHARITY_TEXT
 		_:
@@ -1518,7 +1564,11 @@ func _handle_storage_door_interaction() -> bool:
 
 func _setup_cue_four_pickup() -> void:
 	cue_four_pickup = null
-	cue_four_sprite = _ensure_runtime_cue_sprite(cue_four_sprite, "Cue4Sprite", 4, STORAGE_CUE_FOUR_POSITION, Vector2(0.2, 0.2))
+	cue_four_sprite = _ensure_runtime_cue_sprite(cue_four_sprite, "Cue4Sprite", 4, STORAGE_CUE_FOUR_POSITION, Vector2(0.16, 0.16))
+	if cue_four_sprite != null:
+		cue_four_sprite.global_position = STORAGE_CUE_FOUR_POSITION
+		cue_four_sprite.scale = Vector2(0.16, 0.16)
+		cue_four_sprite.z_index = 6
 	cue_four_in_range = false
 	_update_cue_four_visibility()
 
@@ -1561,6 +1611,41 @@ func _handle_cue_four_interaction() -> bool:
 		_show_keycard_fx_for_cue(4)
 		dialogue_panel.visible = true
 		dialogue_label.text = "Evidence: Crowbar found in Storage.\n\n[Press E]"
+	return true
+
+func _setup_cue_six_pickup() -> void:
+	cue_six_sprite = get_node_or_null("Cue6Sprite") as Sprite2D
+	if cue_six_sprite == null:
+		cue_six_sprite = _ensure_runtime_cue_sprite(cue_six_sprite, "Cue6Sprite", 6, CUE_SIX_PICKUP_POSITION, Vector2(0.065, 0.065))
+	else:
+		cue_six_sprite.global_position = CUE_SIX_PICKUP_POSITION
+		cue_six_sprite.scale = Vector2(0.065, 0.065)
+		cue_six_sprite.z_index = 6
+	_update_cue_six_visibility()
+
+func _update_cue_six_visibility() -> void:
+	if cue_six_sprite == null:
+		return
+	var collected := cue_collected.size() > 5 and cue_collected[5]
+	cue_six_sprite.visible = not collected
+
+func _handle_cue_six_interaction() -> bool:
+	if cue_collected.size() <= 5 or cue_collected[5]:
+		return false
+	var near_cue := player.global_position.distance_to(CUE_SIX_INTERACT_POSITION) <= 98.0
+	if not near_cue:
+		return false
+	dialogue_panel.visible = true
+	if cue_collected.size() > 3 and cue_collected[3]:
+		dialogue_label.text = "Press E to pry out Cue 6 from the cabinet."
+		if Input.is_action_just_pressed("interact"):
+			_set_cue_collected(6, true)
+			cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
+			_update_cue_six_visibility()
+			_show_keycard_fx_for_cue(6)
+			dialogue_label.text = "%s\n\nObjective: get Cue 9 from the boss desk, then use Cue 6 on the laptop.\n\n[Press E]" % CUE_SIX_TERMINAL_KEY_TEXT
+	else:
+		dialogue_label.text = "Cabinet is jammed. You need the crowbar (Cue 4)."
 	return true
 
 func _setup_storage_box() -> void:
@@ -1751,6 +1836,12 @@ func _setup_cue_seven_pickup() -> void:
 	cue_seven_in_range = false
 	_update_cue_seven_visibility()
 
+func _setup_cue_nine_pickup() -> void:
+	cue_nine_sprite = get_node_or_null("FinalCue9") as Sprite2D
+	if cue_nine_sprite == null:
+		cue_nine_sprite = _ensure_runtime_cue_sprite(cue_nine_sprite, "FinalCue9", 9, CUE_NINE_DESK_POSITION, Vector2(0.22, 0.22))
+	_update_cue_nine_visibility()
+
 func _ensure_runtime_cue_sprite(existing: Sprite2D, node_name: String, cue_index: int, world_pos: Vector2, cue_scale: Vector2) -> Sprite2D:
 	if existing != null and is_instance_valid(existing):
 		return existing
@@ -1769,6 +1860,88 @@ func _ensure_runtime_cue_sprite(existing: Sprite2D, node_name: String, cue_index
 func _setup_cue_eleven_pickup() -> void:
 	cue_eleven_sprite = get_node_or_null("SecondFloor/GalleryCue11") as Sprite2D
 	_update_cue_eleven_visibility()
+
+func _update_cue_nine_visibility() -> void:
+	if cue_nine_sprite == null:
+		return
+	var collected := cue_collected.size() > 8 and cue_collected[8]
+	cue_nine_sprite.visible = not collected
+
+func _missing_final_cues() -> Array[int]:
+	var missing: Array[int] = []
+	for cue_id: int in FINAL_REQUIRED_CUES:
+		var idx := cue_id - 1
+		if idx < 0 or idx >= cue_collected.size() or not cue_collected[idx]:
+			missing.append(cue_id)
+	return missing
+
+func _missing_cues_text(missing: Array[int]) -> String:
+	var parts: PackedStringArray = []
+	for cue_id: int in missing:
+		parts.append(str(cue_id))
+	return ", ".join(parts)
+
+func _handle_cue_nine_interaction() -> bool:
+	if cue_collected.size() <= 8 or cue_collected[8]:
+		return false
+	if cue_nine_sprite == null:
+		return false
+	var near_cue := player.global_position.distance_to(cue_nine_sprite.global_position) <= 96.0
+	if not near_cue:
+		return false
+	dialogue_panel.visible = true
+	dialogue_label.text = "Press E to inspect boss desk archive (Cue 9)."
+	if not Input.is_action_just_pressed("interact"):
+		return true
+	var missing: Array[int] = _missing_final_cues()
+	if not missing.is_empty():
+		dialogue_label.text = "Need all required cues first.\nMissing: %s" % _missing_cues_text(missing)
+		return true
+	_set_cue_collected(9, true)
+	cue_notes[9] = CUE_NINE_FINAL_TEXT
+	_update_cue_nine_visibility()
+	_show_keycard_fx_for_cue(9)
+	dialogue_label.text = "%s\n\nUse Cue 6 on the laptop to call backup.\n\n[Press E]" % CUE_NINE_FINAL_TEXT
+	return true
+
+func _handle_backup_laptop_interaction() -> bool:
+	var near_laptop := player.global_position.distance_to(BACKUP_LAPTOP_POSITION) <= 104.0
+	if not near_laptop:
+		return false
+	dialogue_panel.visible = true
+	if cue_collected.size() <= 5 or not cue_collected[5]:
+		dialogue_label.text = "Laptop requires Cue 6 terminal key."
+		return true
+	if cue_collected.size() <= 8 or not cue_collected[8]:
+		dialogue_label.text = "Need Cue 9 archive before transmitting backup call."
+		return true
+	dialogue_label.text = "Press E to use Cue 6 on laptop and call backup."
+	if Input.is_action_just_pressed("interact"):
+		_start_ending_subtitles()
+	return true
+
+func _start_ending_subtitles() -> void:
+	ending_active = true
+	ending_subtitle_index = 0
+	ending_subtitles.clear()
+	ending_subtitles.append("Final Transmission: Evidence package delivered.")
+	ending_subtitles.append("Joint task force raided the island network within hours.")
+	ending_subtitles.append("The mob's logistics, labs, and shell companies were dismantled.")
+	ending_subtitles.append("Survivors were extracted. Records were published.")
+	ending_subtitles.append("Case closed.\n\nTHE END")
+	player.set_physics_process(false)
+	dialogue_panel.visible = true
+	dialogue_label.text = "%s\n\n[Press E]" % ending_subtitles[ending_subtitle_index]
+
+func _advance_ending_subtitles() -> void:
+	ending_subtitle_index += 1
+	if ending_subtitle_index >= ending_subtitles.size():
+		ending_subtitle_index = ending_subtitles.size() - 1
+		dialogue_panel.visible = true
+		dialogue_label.text = "%s" % ending_subtitles[ending_subtitle_index]
+		return
+	dialogue_panel.visible = true
+	dialogue_label.text = "%s\n\n[Press E]" % ending_subtitles[ending_subtitle_index]
 
 func _update_cue_eleven_visibility() -> void:
 	if cue_eleven_sprite == null:
@@ -1872,7 +2045,7 @@ func _reset_to_checkpoint(index: int) -> void:
 	current_checkpoint_index = clamped
 	current_room_index = -1
 	player.global_position = checkpoint_positions[clamped]
-	guard.visible = false
+	_despawn_guard()
 	guard_exit_running = false
 	escorting = false
 	path_index = 0
@@ -1886,6 +2059,9 @@ func _reset_to_checkpoint(index: int) -> void:
 	gallery_code_unlocked = false
 	gallery_code_entry_active = false
 	gallery_code_buffer = ""
+	ending_active = false
+	ending_subtitles.clear()
+	ending_subtitle_index = 0
 	_update_gallery_code_door()
 	call_deferred("_refresh_visibility_next_frame")
 
@@ -1896,12 +2072,10 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	_set_doctor_default_visual()
 
-	guard.global_position = GUARD_SPAWN_POSITION
-	guard.velocity = Vector2.ZERO
-	_update_guard_visual(Vector2.ZERO)
-	other_guy.visible = true
+	other_guy.visible = index == 0
 	other_guy.global_position = Vector2(1800, 400)
-	_update_other_guy_visual(Vector2.ZERO)
+	if other_guy.visible:
+		_update_other_guy_visual(Vector2.ZERO)
 	doctor.global_position = DOCTOR_START_POSITION
 
 	keycard_fx_active = false
@@ -1923,7 +2097,9 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_six_visibility()
 		_update_cue_seven_visibility()
+		_update_cue_nine_visibility()
 		_update_cue_eleven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
@@ -1957,7 +2133,9 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_six_visibility()
 		_update_cue_seven_visibility()
+		_update_cue_nine_visibility()
 		_update_cue_eleven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
@@ -1992,7 +2170,9 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_six_visibility()
 		_update_cue_seven_visibility()
+		_update_cue_nine_visibility()
 		_update_cue_eleven_visibility()
 		storage_unlocked = false
 		_update_storage_door_visibility()
@@ -2029,7 +2209,9 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_inventory_ui()
 		_update_cue_two_visibility()
 		_update_cue_three_visibility()
+		_update_cue_six_visibility()
 		_update_cue_seven_visibility()
+		_update_cue_nine_visibility()
 		_update_cue_eleven_visibility()
 		storage_unlocked = true
 		_update_storage_door_visibility()
@@ -2064,13 +2246,17 @@ func _restart_from_checkpoint(index: int) -> void:
 	_set_cue_collected(3, true)
 	_set_cue_collected(4, true)
 	_set_cue_collected(5, true)
+	_set_cue_collected(6, true)
 	_set_cue_collected(7, true)
 	cue_notes[5] = CUE_FIVE_INVOICE_TEXT
+	cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
 	cue_notes[7] = CUE_SEVEN_STATUE_TEXT
 	_refresh_inventory_ui()
 	_update_cue_two_visibility()
 	_update_cue_three_visibility()
+	_update_cue_six_visibility()
 	_update_cue_seven_visibility()
+	_update_cue_nine_visibility()
 	_update_cue_eleven_visibility()
 	storage_unlocked = true
 	_update_storage_door_visibility()

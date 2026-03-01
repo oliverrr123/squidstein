@@ -17,11 +17,16 @@
 [ext_resource type="Texture2D" uid="uid://mpjwnyt67m1g" path="res://cue11.png" id="18_cue11_tex"]
 [ext_resource type="Texture2D" uid="uid://txegduofpn5q" path="res://elevator.png" id="19_elevator_tex"]
 [ext_resource type="Texture2D" uid="uid://np8ie3ob3ser" path="res://box.png" id="20_box_tex"]
+[ext_resource type="Texture2D" uid="uid://bsixs0c3c1pcu" path="res://picsnig/cue2.png" id="20_cue2_tex"]
+[ext_resource type="Texture2D" uid="uid://ctn74o1kk7nxl" path="res://picsnig/cue3.png" id="20_cue3_tex"]
+[ext_resource type="Texture2D" uid="uid://1tkw1ohco3c7" path="res://picsnig/cue4.png" id="20_cue4_tex"]
+[ext_resource type="Texture2D" uid="uid://c1hmcbsxwlb3j" path="res://picsnig/cue6.png" id="20_cue6_tex"]
+[ext_resource type="Texture2D" uid="uid://c5dleeayph5hw" path="res://picsnig/cue7.png" id="20_cue7_tex"]
 [ext_resource type="Texture2D" uid="uid://bwc4t1v4dm2qc" path="res://196ce298c6745b97f8322f6e69189b69cd81b546a4f6b46719596b17612987c6.png" id="21_1wct6"]
 [ext_resource type="Texture2D" uid="uid://cse2nd38ekxtr" path="res://da97326e8b689fe878b985a25be09a374f0e040d135f768d683ca46fdc2daa2d.png" id="22_sjfai"]
 [ext_resource type="Texture2D" uid="uid://b8qhf881sy76k" path="res://20bbe2fb0ca1f86b9a851aa450f13d7489bfbf67d68c53b6ffcf7ba34711d11a.png" id="23_63dio"]
 [ext_resource type="Texture2D" uid="uid://oh3pwyuit2nw" path="res://43170b6aa9baa8b110b0c553c948dae6b52a458b01955a164c74e28725e6bc3b.png" id="23_jxdyh"]
-[ext_resource type="Texture2D" uid="uid://cl6bc4e2eklh" path="res://eight.png" id="24_gallery_lock_tex"]
+[ext_resource type="Texture2D" uid="uid://boqhodtvvwm78" path="res://lock.png" id="24_gallery_lock_tex"]
 [ext_resource type="Texture2D" uid="uid://cve8xy66vbdbe" path="res://aae55b979ae4d2b8316620f22b60bafaa9fab8243219561c464fa457a048da8b.png" id="24_vnl4d"]
 [ext_resource type="Texture2D" uid="uid://dflvroiiua582" path="res://ae0395bac2ae26eaf7ff00e4fff4fcfc3cc453365d815d3acfcf6d8dc3a17aa8.png" id="25_g0gsg"]
 [ext_resource type="Texture2D" uid="uid://qkssdax6c0th" path="res://7da8a2809475220fdc175a9f6064948791806bc588463b8e62a3b5b7e21e9fd8.png" id="26_63dio"]
@@ -78,6 +83,9 @@ size = Vector2(640, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_turn2_bottom"]
 size = Vector2(320, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hallway_cap"]
+size = Vector2(320, 668)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hall_top"]
 size = Vector2(1200, 64)
@@ -147,28 +155,40 @@ radius = 82.0
 size = Vector2(206, 307)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_shelf_blocker"]
-size = Vector2(368, 239)
+size = Vector2(267, 158.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_storage_cabinet_blocker"]
-size = Vector2(200, 247)
+size = Vector2(138, 173)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_clock_blocker"]
-size = Vector2(72, 178)
+size = Vector2(88, 198)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_bookshelf_blocker"]
 size = Vector2(190, 180)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_boss_desk_blocker"]
-size = Vector2(430, 491)
+size = Vector2(448, 123.5)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_cue_interact"]
+radius = 623.509
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_x5i73"]
+size = Vector2(271.09158, 1112.2319)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_left_sofa_blocker"]
-size = Vector2(92, 170)
+size = Vector2(158.00002, 190.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_bottom_sofa_blocker"]
-size = Vector2(204, 100)
+size = Vector2(277.5, 189)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_portrait_blocker"]
-size = Vector2(238, 240)
+size = Vector2(82, 165.53516)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1ogn6"]
+size = Vector2(598.6827, 135.08496)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_cue_interact_small"]
+radius = 1374.4834
 
 [node name="World" type="Node2D" unique_id=293326300]
 script = ExtResource("3_world_script")
@@ -194,23 +214,23 @@ texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(0, 0, 1200, 0, 1200, 800, 0, 800)
 
 [node name="CellWallTop" type="Polygon2D" parent="Blockout" unique_id=1371382730]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(0, 0, 1200, 0, 1200, 64, 0, 64)
 
 [node name="CellWallBottom" type="Polygon2D" parent="Blockout" unique_id=171280009]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(0, 736, 1200, 736, 1200, 800, 0, 800)
 
 [node name="CellWallLeft" type="Polygon2D" parent="Blockout" unique_id=806250979]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(0, 0, 64, 0, 64, 800, 0, 800)
 
 [node name="CellWallRightUpper" type="Polygon2D" parent="Blockout" unique_id=207439801]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1136, 0, 1200, 0, 1200, 330, 1136, 330)
 
 [node name="CellWallRightLower" type="Polygon2D" parent="Blockout" unique_id=1546765754]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1136, 470, 1200, 470, 1200, 800, 1136, 800)
 
 [node name="CellDoorLintel" type="Polygon2D" parent="Blockout" unique_id=1374057176]
@@ -225,30 +245,31 @@ texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1200, 0, 1520, 0, 1520, 800, 1200, 800)
 
 [node name="HallwayWallBottom" type="Polygon2D" parent="Blockout" unique_id=2138683989]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1200, 736, 1520, 736, 1520, 800, 1200, 800)
 
 [node name="HallwayUpFloor" type="Polygon2D" parent="Blockout" unique_id=1854618484]
 texture_repeat = 2
+scale = Vector2(1, 0.9376)
 color = Color(1, 1, 1, 0.5)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1200, -5000, 1520, -5000, 1520, 0, 1200, 0)
 
 [node name="HallwayUpWallLeftUpper" type="Polygon2D" parent="Blockout" unique_id=1463189611]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1136, -5000, 1200, -5000, 1200, -4010, 1136, -4010)
 
 [node name="HallwayUpWallLeftLower" type="Polygon2D" parent="Blockout" unique_id=159083901]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1136, -3830, 1200, -3830, 1200, 0, 1136, 0)
 
 [node name="HallwayUpWallRight" type="Polygon2D" parent="Blockout" unique_id=1054185286]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, -5000, 1584, -5000, 1584, -3200, 1520, -3200)
 
 [node name="HallwayUpWallRightLower" type="Polygon2D" parent="Blockout" unique_id=428313890]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, -2880, 1584, -2880, 1584, 0, 1520, 0)
 
 [node name="Turn1Floor" type="Polygon2D" parent="Blockout" unique_id=942257413]
@@ -263,13 +284,13 @@ polygon = PackedVector2Array(1520, -3200, 3120, -3200, 3120, -2880, 1520, -2880)
 [node name="Turn1TopWall" type="Polygon2D" parent="Blockout" unique_id=2084586579]
 position = Vector2(243.19986, 0)
 scale = Vector2(0.8400001, 1)
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, -3264, 3120, -3264, 3120, -3200, 1520, -3200)
 
 [node name="Turn1BottomWall" type="Polygon2D" parent="Blockout" unique_id=619129681]
 position = Vector2(-60.799927, 0)
 scale = Vector2(1.04, 1)
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, -2880, 3120, -2880, 3120, -2848.897, 3120, -2816, 1520, -2816)
 
 [node name="TurnVerticalFloor" type="Polygon2D" parent="Blockout" unique_id=1661107837]
@@ -282,13 +303,13 @@ polygon = PackedVector2Array(2800, -5000, 3120, -5000, 3120, -2880, 2800, -2880)
 [node name="TurnVerticalWallLeft" type="Polygon2D" parent="Blockout" unique_id=310808899]
 position = Vector2(0, -667.77344)
 scale = Vector2(1, 0.8792453)
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(2800, -5000, 2864, -5000, 2864, -2880, 2800, -2880)
 
 [node name="TurnVerticalWallRightLower" type="Polygon2D" parent="Blockout" unique_id=1927964143]
 position = Vector2(0, 166.3999)
 scale = Vector2(1, 1.0355556)
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3120, -4680, 3184, -4680, 3184, -2880, 3120, -2880)
 
 [node name="Turn2Floor" type="Polygon2D" parent="Blockout" unique_id=281082414]
@@ -301,11 +322,11 @@ polygon = PackedVector2Array(3120, -5000, 3440, -5000, 3440, -4680, 3120, -4680)
 [node name="Turn2TopWall" type="Polygon2D" parent="Blockout" unique_id=1435992996]
 position = Vector2(-3440, 0)
 scale = Vector2(2, 1)
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3120, -5064, 3440, -5064, 3440, -5000, 3120, -5000)
 
 [node name="Turn2BottomWall" type="Polygon2D" parent="Blockout" unique_id=169609022]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3120, -4680, 3440, -4680, 3440, -4616, 3120, -4616)
 
 [node name="EndRoomFloor" type="Polygon2D" parent="Blockout" unique_id=33589733]
@@ -327,19 +348,19 @@ color = Color(0.88, 0.88, 0.9, 1)
 polygon = PackedVector2Array(4380, -5148, 4470, -5148, 4470, -5012, 4380, -5012)
 
 [node name="EndRoomWallTop" type="Polygon2D" parent="Blockout" unique_id=1644941412]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3440, -5480, 4640, -5480, 4640, -5416, 3440, -5416)
 
 [node name="EndRoomWallBottom" type="Polygon2D" parent="Blockout" unique_id=507564894]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3440, -4680, 4640, -4680, 4640, -4616, 3440, -4616)
 
 [node name="EndRoomWallRightUpper" type="Polygon2D" parent="Blockout" unique_id=636407341]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(4576, -5480, 4640, -5480, 4640, -5000, 4576, -5000)
 
 [node name="EndRoomWallRightLower" type="Polygon2D" parent="Blockout" unique_id=1970031102]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(4576, -4840, 4640, -4840, 4640, -4680, 4576, -4680)
 
 [node name="EndRoomToPreDoorLintel" type="Polygon2D" parent="Blockout" unique_id=1165007722]
@@ -347,11 +368,11 @@ color = Color(0.86, 0.67, 0.15, 1)
 polygon = PackedVector2Array(4576, -5000, 4640, -5000, 4640, -4840, 4576, -4840)
 
 [node name="EndRoomWallLeftUpper" type="Polygon2D" parent="Blockout" unique_id=1155759425]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3440, -5480, 3504, -5480, 3504, -5000, 3440, -5000)
 
 [node name="EndRoomWallLeftLower" type="Polygon2D" parent="Blockout" unique_id=32048103]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(3440, -4840, 3504, -4840, 3504, -4680, 3440, -4680)
 
 [node name="EndRoomDoorLintel" type="Polygon2D" parent="Blockout" unique_id=1423944851]
@@ -366,43 +387,44 @@ texture_scale = Vector2(4, 4)
 polygon = PackedVector2Array(4640, -5480, 5840, -5480, 5840, -4680, 4640, -4680)
 
 [node name="PreSurgeryRoomWallTop" type="Polygon2D" parent="Blockout" unique_id=1394287336]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(4640, -5480, 5840, -5480, 5840, -5416, 4640, -5416)
 
 [node name="PreSurgeryRoomWallBottom" type="Polygon2D" parent="Blockout" unique_id=546184521]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(4640, -4680, 5840, -4680, 5840, -4616, 4640, -4616)
 
 [node name="PreSurgeryRoomWallRight" type="Polygon2D" parent="Blockout" unique_id=841132520]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(5776, -5480, 5840, -5480, 5840, -4680, 5776, -4680)
 
 [node name="HallFloor" type="Polygon2D" parent="Blockout" unique_id=1073731529]
 texture_repeat = 2
-position = Vector2(2, 2)
+position = Vector2(0.00013136864, 0)
+scale = Vector2(0.9999999, 1)
 color = Color(1, 1, 1, 0.5)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(1520, 0, 2720, 0, 2720, 800, 1520, 800)
 
 [node name="HallWallTop" type="Polygon2D" parent="Blockout" unique_id=1718559628]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, 0, 2720, 0, 2720, 64, 1520, 64)
 
 [node name="HallWallBottom" type="Polygon2D" parent="Blockout" unique_id=801486262]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, 736, 2720, 736, 2720, 800, 1520, 800)
 
 [node name="HallWallRight" type="Polygon2D" parent="Blockout" unique_id=261362282]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(2656, 0, 2720, 0, 2720, 800, 2656, 800)
 
 [node name="HallWallLeftUpper" type="Polygon2D" parent="Blockout" unique_id=387512719]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, 0, 1584, 0, 1584, 330, 1520, 330)
 
 [node name="HallWallLeftLower" type="Polygon2D" parent="Blockout" unique_id=901834469]
-color = Color(0.07, 0.08, 0.12, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(1520, 470, 1584, 470, 1584, 800, 1520, 800)
 
 [node name="HallDoorLintel" type="Polygon2D" parent="Blockout" unique_id=1209250254]
@@ -482,6 +504,10 @@ shape = SubResource("RectangleShape2D_turn2_top")
 [node name="Turn2Bottom" type="CollisionShape2D" parent="HallwayWalls" unique_id=2001423790]
 position = Vector2(3280, -4648)
 shape = SubResource("RectangleShape2D_turn2_bottom")
+
+[node name="TopCap" type="CollisionShape2D" parent="HallwayWalls" unique_id=2001423791]
+position = Vector2(1360, -4666)
+shape = SubResource("RectangleShape2D_hallway_cap")
 
 [node name="HallWalls" type="StaticBody2D" parent="." unique_id=1870181901]
 
@@ -612,30 +638,38 @@ position = Vector2(276, 0)
 
 [node name="StorageFloor" type="Polygon2D" parent="StorageRoom" unique_id=1199118229]
 texture_repeat = 2
+position = Vector2(63.999992, 0)
 color = Color(1, 1, 1, 0.48)
 texture = ExtResource("5_floor_tex")
 texture_scale = Vector2(2, 2)
 polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -3440, -760, -3440)
 
 [node name="StorageWallTop" type="Polygon2D" parent="StorageRoom" unique_id=1387782931]
-color = Color(0.07, 0.08, 0.12, 1)
+position = Vector2(64.00006, 0)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -4336, -760, -4336)
 
 [node name="StorageWallBottom" type="Polygon2D" parent="StorageRoom" unique_id=172358890]
-color = Color(0.07, 0.08, 0.12, 1)
+position = Vector2(64.00006, 0)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-760, -3504, 860, -3504, 860, -3440, -760, -3440)
 
 [node name="StorageWallLeft" type="Polygon2D" parent="StorageRoom" unique_id=188403921]
-color = Color(0.07, 0.08, 0.12, 1)
+position = Vector2(64.00006, 0)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
-[node name="StorageWallRightUpper" type="Polygon2D" parent="StorageRoom" unique_id=113900722]
-color = Color(0.07, 0.08, 0.12, 1)
-polygon = PackedVector2Array(796, -4400, 860, -4400, 860, -4010, 796, -4010)
+[node name="StorageWallLeft" type="Polygon2D" parent="StorageRoom/StorageWallLeft" unique_id=895444926]
+position = Vector2(546.2507, -2960.8335)
+scale = Vector2(1.718751, 0.32708326)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
-[node name="StorageWallRightLower" type="Polygon2D" parent="StorageRoom" unique_id=201513981]
-color = Color(0.07, 0.08, 0.12, 1)
-polygon = PackedVector2Array(796, -3830, 860, -3830, 860, -3440, 796, -3440)
+[node name="StorageWallLeft" type="Polygon2D" parent="StorageRoom/StorageWallLeft/StorageWallLeft" unique_id=1017990116]
+position = Vector2(302.72034, -594.57764)
+scale = Vector2(1.2192692, 0.82715756)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
 [node name="StorageRoomWalls" type="StaticBody2D" parent="StorageRoom" unique_id=1870041322]
 
@@ -646,28 +680,24 @@ polygon = PackedVector2Array(-760, -4400, 860, -4400, 860, -4336, -760, -4336)
 polygon = PackedVector2Array(-760, -3504, 860, -3504, 860, -3440, -760, -3440)
 
 [node name="Left" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=948164983]
+position = Vector2(63, 4)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
-[node name="RightUpper" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=486805047]
-polygon = PackedVector2Array(796, -4400, 860, -4400, 860, -4010, 796, -4010)
-
-[node name="RightLower" type="CollisionPolygon2D" parent="StorageRoom/StorageRoomWalls" unique_id=734119004]
-polygon = PackedVector2Array(796, -3830, 860, -3830, 860, -3440, 796, -3440)
-
 [node name="StorageElevatorArea" type="Area2D" parent="StorageRoom" unique_id=1701100004]
-position = Vector2(-623, -4265)
+position = Vector2(-558.99994, -4265)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageElevatorArea" unique_id=1701100005]
+position = Vector2(69, 120)
 shape = SubResource("CircleShape2D_elevator_interact")
 
 [node name="ElevatorSprite" type="Sprite2D" parent="StorageRoom/StorageElevatorArea" unique_id=1701100006]
 z_index = 4
-position = Vector2(41, 63.000107)
-scale = Vector2(0.25565735, 0.25561646)
+position = Vector2(60.000008, 46.999817)
+scale = Vector2(0.23221113, 0.232174)
 texture = ExtResource("19_elevator_tex")
 
 [node name="StorageBox" type="Area2D" parent="StorageRoom" unique_id=1701100011]
-position = Vector2(-156, -3920)
+position = Vector2(-91.99994, -3920)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageBox" unique_id=1701100012]
 shape = SubResource("CircleShape2D_storage_box_interact")
@@ -678,24 +708,24 @@ scale = Vector2(0.22, 0.22)
 texture = ExtResource("20_box_tex")
 
 [node name="StorageForkliftBlocker" type="StaticBody2D" parent="StorageRoom" unique_id=1701100033]
-position = Vector2(-140, -3890)
+position = Vector2(-75.99994, -3890)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageForkliftBlocker" unique_id=1701100034]
 position = Vector2(-19, 187)
 shape = SubResource("RectangleShape2D_storage_forklift_blocker")
 
 [node name="StorageShelfBlocker" type="StaticBody2D" parent="StorageRoom" unique_id=1701100035]
-position = Vector2(300, -4248)
+position = Vector2(364.00006, -4248)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageShelfBlocker" unique_id=1701100036]
-position = Vector2(-6, 47)
+position = Vector2(-68.5, 6.75)
 shape = SubResource("RectangleShape2D_storage_shelf_blocker")
 
 [node name="StorageCabinetBlocker" type="StaticBody2D" parent="StorageRoom" unique_id=1701100037]
-position = Vector2(640, -4248)
+position = Vector2(704.00006, -4248)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StorageRoom/StorageCabinetBlocker" unique_id=1701100038]
-position = Vector2(35, 43.5)
+position = Vector2(66, 6.5)
 shape = SubResource("RectangleShape2D_storage_cabinet_blocker")
 
 [node name="SecondFloor" type="Node2D" parent="." unique_id=154713421]
@@ -709,27 +739,27 @@ texture_scale = Vector2(2.2, 2.2)
 polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -4840, -980, -4840)
 
 [node name="TopWall" type="Polygon2D" parent="SecondFloor" unique_id=299671053]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -6200, -849, -6200, -849, -6128, -980, -6128)
 
 [node name="TopWallRight" type="Polygon2D" parent="SecondFloor" unique_id=299671054]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-529, -6200, 980, -6200, 980, -6128, -529, -6128)
 
 [node name="BottomWallLeft" type="Polygon2D" parent="SecondFloor" unique_id=145019786]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
 
 [node name="BottomWallRight" type="Polygon2D" parent="SecondFloor" unique_id=146743230]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(0, -4912, 980, -4912, 980, -4840, 0, -4840)
 
 [node name="LeftWall" type="Polygon2D" parent="SecondFloor" unique_id=602982772]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 
 [node name="RightWall" type="Polygon2D" parent="SecondFloor" unique_id=115327732]
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 
 [node name="Walls" type="StaticBody2D" parent="SecondFloor" unique_id=827673024]
@@ -741,11 +771,6 @@ polygon = PackedVector2Array(-980, -6200, -849, -6200, -849, -6128, -980, -6128)
 polygon = PackedVector2Array(-529, -6200, 980, -6200, 980, -6128, -529, -6128)
 
 [node name="BottomLeft" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=1021589088]
-position = Vector2(1, -10)
-polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
-
-[node name="BottomLeft" type="CollisionPolygon2D" parent="SecondFloor/Walls/BottomLeft" unique_id=1872886655]
-position = Vector2(1, -10)
 polygon = PackedVector2Array(-980, -4912, 0, -4912, 0, -4840, -980, -4840)
 
 [node name="BottomRight" type="CollisionPolygon2D" parent="SecondFloor/Walls" unique_id=911001390]
@@ -758,39 +783,46 @@ polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 
 [node name="GalleryClock" type="Sprite2D" parent="SecondFloor" unique_id=1701100001]
-position = Vector2(566, -5985)
-scale = Vector2(0.18110606, 0.18260276)
+position = Vector2(655.00006, -6028)
+scale = Vector2(0.12587784, 0.12691814)
 texture = ExtResource("16_clock_tex")
 
 [node name="GalleryClockBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100017]
 position = Vector2(566, -5985)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryClockBlocker" unique_id=1701100018]
+position = Vector2(87, -57)
 shape = SubResource("RectangleShape2D_gallery_clock_blocker")
 
 [node name="GalleryBookshelf" type="Sprite2D" parent="SecondFloor" unique_id=1701100002]
-position = Vector2(770, -5992)
-scale = Vector2(0.24, 0.24)
+position = Vector2(817, -6033.9995)
+scale = Vector2(0.16455117, 0.16455115)
 texture = ExtResource("17_bookshelf_tex")
 
 [node name="GalleryBookshelfBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100019]
 position = Vector2(770, -5992)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryBookshelfBlocker" unique_id=1701100020]
+position = Vector2(41, -45)
 shape = SubResource("RectangleShape2D_gallery_bookshelf_blocker")
 
 [node name="GalleryBossDeskBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100031]
-position = Vector2(-20, -5940)
+position = Vector2(415.99997, -5000)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryBossDeskBlocker" unique_id=1701100032]
-position = Vector2(1390, 1191.5)
+position = Vector2(268.00003, 29.75)
 shape = SubResource("RectangleShape2D_gallery_boss_desk_blocker")
 
 [node name="GalleryCue11" type="Sprite2D" parent="SecondFloor" unique_id=1701100010]
 z_index = 4
-position = Vector2(356.64996, -5984.1)
-scale = Vector2(0.24020548, 0.24534261)
+position = Vector2(515, -6034)
+scale = Vector2(0.14315066, 0.14621213)
 texture = ExtResource("18_cue11_tex")
+
+[node name="Cue11Area" type="Area2D" parent="SecondFloor/GalleryCue11" unique_id=1701100046]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/GalleryCue11/Cue11Area" unique_id=1701100047]
+shape = SubResource("CircleShape2D_cue_interact")
 
 [node name="GalleryCodeDoorBlocker" type="StaticBody2D" parent="SecondFloor" unique_id=1701100014]
 position = Vector2(-689, -6164)
@@ -800,22 +832,84 @@ shape = SubResource("RectangleShape2D_hallway_bottom")
 
 [node name="GalleryCodeLockIcon" type="Sprite2D" parent="SecondFloor" unique_id=1701100016]
 z_index = 6
-position = Vector2(-523, -6093)
-scale = Vector2(0.055, 0.055)
+position = Vector2(-689, -6164)
+scale = Vector2(0.126, 0.126)
 texture = ExtResource("24_gallery_lock_tex")
 
 [node name="UpperElevatorArea" type="Area2D" parent="SecondFloor" unique_id=1701100007]
 position = Vector2(-2.437, -5041.448)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100008]
-position = Vector2(-826, 59)
+position = Vector2(-759.563, -15.551758)
 shape = SubResource("CircleShape2D_elevator_interact")
 
 [node name="ElevatorSprite" type="Sprite2D" parent="SecondFloor/UpperElevatorArea" unique_id=1701100009]
 z_index = 4
-position = Vector2(-771.56305, -24.551836)
-scale = Vector2(0.25998965, 0.25873405)
+position = Vector2(-789.563, -152.55183)
+scale = Vector2(0.232, 0.232)
 texture = ExtResource("19_elevator_tex")
+
+[node name="StorageWallLeft" type="Polygon2D" parent="SecondFloor/UpperElevatorArea/ElevatorSprite" unique_id=1013220356]
+z_index = -1
+position = Vector2(15264.615, 5021.553)
+scale = Vector2(20.922457, 1.2931036)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
+
+[node name="Cue2Sprite" type="Sprite2D" parent="." unique_id=1701100041]
+z_index = 6
+position = Vector2(5637.6, -4932.4)
+scale = Vector2(0.07890425, 0.07890425)
+texture = ExtResource("20_cue2_tex")
+
+[node name="Cue2Area" type="Area2D" parent="Cue2Sprite" unique_id=1701100048]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Cue2Sprite/Cue2Area" unique_id=1701100049]
+shape = SubResource("CircleShape2D_cue_interact")
+
+[node name="Cue3Sprite" type="Sprite2D" parent="." unique_id=1701100042]
+z_index = 6
+position = Vector2(4838.9, -5322.1)
+scale = Vector2(0.07410971, 0.07273978)
+texture = ExtResource("20_cue3_tex")
+
+[node name="Cue3Area" type="Area2D" parent="Cue3Sprite" unique_id=1701100050]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Cue3Sprite/Cue3Area" unique_id=1701100051]
+shape = SubResource("CircleShape2D_cue_interact")
+
+[node name="Cue4Sprite" type="Sprite2D" parent="." unique_id=1701100043]
+z_index = 6
+position = Vector2(2168, 553)
+scale = Vector2(0.07041096, 0.07041096)
+texture = ExtResource("20_cue4_tex")
+
+[node name="Cue4Area" type="Area2D" parent="Cue4Sprite" unique_id=1701100052]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Cue4Sprite/Cue4Area" unique_id=1701100053]
+shape = SubResource("CircleShape2D_cue_interact")
+
+[node name="Cue6Sprite" type="Sprite2D" parent="." unique_id=1701100044]
+z_index = 6
+position = Vector2(1043, -4157)
+scale = Vector2(0.065, 0.065)
+texture = ExtResource("20_cue6_tex")
+
+[node name="Cue6Area" type="Area2D" parent="Cue6Sprite" unique_id=1701100054]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Cue6Sprite/Cue6Area" unique_id=1701100055]
+shape = SubResource("CircleShape2D_cue_interact")
+
+[node name="Cue7Sprite" type="Sprite2D" parent="." unique_id=1701100045]
+z_index = 6
+position = Vector2(77, -5542)
+scale = Vector2(0.22, 0.22)
+texture = ExtResource("20_cue7_tex")
+
+[node name="Cue7Area" type="Area2D" parent="Cue7Sprite" unique_id=1701100056]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Cue7Sprite/Cue7Area" unique_id=1701100057]
+shape = SubResource("CircleShape2D_cue_interact")
 
 [node name="DialogueUI" type="CanvasLayer" parent="." unique_id=439904649]
 layer = 10
@@ -926,29 +1020,56 @@ texture = ExtResource("8_wood_floor_tex")
 texture_scale = Vector2(2.2, 2.2)
 polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -4840, -980, -4840)
 
+[node name="Ed900c66f15a05063e0a9f81a76d860Ebd90e628Fcbe4e5d72d0703818Fe89c8" type="Sprite2D" parent="Floor" unique_id=1021911508]
+position = Vector2(166, -5993)
+scale = Vector2(0.17337325, 0.14475434)
+texture = ExtResource("27_vnl4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor/Ed900c66f15a05063e0a9f81a76d860Ebd90e628Fcbe4e5d72d0703818Fe89c8" unique_id=1014340769]
+position = Vector2(-8.651855, -3.453125)
+shape = SubResource("RectangleShape2D_x5i73")
+
 [node name="TopWall" type="Polygon2D" parent="." unique_id=1621265355]
 position = Vector2(-689, -1288)
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -6128, -980, -6128)
 
 [node name="BottomWallLeft" type="Polygon2D" parent="." unique_id=995417796]
 position = Vector2(-689, -1288)
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -4912, -160, -4912, -160, -4840, -980, -4840)
 
 [node name="BottomWallRight" type="Polygon2D" parent="." unique_id=792758857]
 position = Vector2(-689, -1288)
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(160, -4912, 980, -4912, 980, -4840, 160, -4840)
 
 [node name="LeftWall" type="Polygon2D" parent="." unique_id=1644884392]
 position = Vector2(-689, -1288)
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
 
 [node name="RightWall" type="Polygon2D" parent="." unique_id=1539372640]
 position = Vector2(-689, -1288)
-color = Color(0.16, 0.12, 0.09, 1)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
+
+[node name="GalleryRoomWalls" type="StaticBody2D" parent="." unique_id=1501193344]
+position = Vector2(-689, -1288)
+
+[node name="Top" type="CollisionPolygon2D" parent="GalleryRoomWalls" unique_id=1501193345]
+polygon = PackedVector2Array(-980, -6200, 980, -6200, 980, -6128, -980, -6128)
+
+[node name="BottomLeft" type="CollisionPolygon2D" parent="GalleryRoomWalls" unique_id=1501193346]
+polygon = PackedVector2Array(-980, -4912, -160, -4912, -160, -4840, -980, -4840)
+
+[node name="BottomRight" type="CollisionPolygon2D" parent="GalleryRoomWalls" unique_id=1501193347]
+polygon = PackedVector2Array(160, -4912, 980, -4912, 980, -4840, 160, -4840)
+
+[node name="Left" type="CollisionPolygon2D" parent="GalleryRoomWalls" unique_id=1501193348]
+polygon = PackedVector2Array(-980, -6200, -908, -6200, -908, -4840, -980, -4840)
+
+[node name="Right" type="CollisionPolygon2D" parent="GalleryRoomWalls" unique_id=1501193349]
 polygon = PackedVector2Array(908, -6200, 980, -6200, 980, -4840, 908, -4840)
 
 [node name="DoorLintel" type="Polygon2D" parent="." unique_id=848713120]
@@ -957,95 +1078,94 @@ color = Color(0.86, 0.67, 0.15, 1)
 polygon = PackedVector2Array(-160, -4912, 160, -4912, 160, -4840, -160, -4840)
 
 [node name="196Ce298c6745b97f8322f6e69189b69Cd81b546a4f6b46719596b17612987c6" type="Sprite2D" parent="." unique_id=431433419]
-position = Vector2(-836.99994, -5721)
-scale = Vector2(0.2751868, 0.23185465)
+position = Vector2(-858.99994, -5651.0005)
+scale = Vector2(0.20459567, 0.17237912)
 texture = ExtResource("21_1wct6")
 
 [node name="GalleryLeftSofaTopBlocker" type="StaticBody2D" parent="." unique_id=1701100021]
-position = Vector2(-836.99994, -5721)
+position = Vector2(181.00005, -3737)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaTopBlocker" unique_id=1701100022]
 shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
 
 [node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d" type="Sprite2D" parent="." unique_id=355713573]
-position = Vector2(724, -5015.0005)
-scale = Vector2(0.29537672, 0.3307927)
+position = Vector2(779.24774, -4980.25)
+scale = Vector2(0.20077443, 0.22484748)
 texture = ExtResource("22_sjfai")
 
 [node name="GalleryBottomSofaRightBlocker" type="StaticBody2D" parent="." unique_id=1701100023]
-position = Vector2(724, -5015.0005)
+position = Vector2(570.0001, -4244)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryBottomSofaRightBlocker" unique_id=1701100024]
+position = Vector2(0.24987793, -3.5)
 shape = SubResource("RectangleShape2D_gallery_bottom_sofa_blocker")
 
 [node name="196Ce298c6745b97f8322f6e69189b69Cd81b546a4f6b46719596b17612987c7" type="Sprite2D" parent="." unique_id=364309992]
-position = Vector2(-836.99994, -5484)
-scale = Vector2(0.2751868, 0.23185465)
+position = Vector2(-856.175, -5446.625)
+scale = Vector2(0.20363814, 0.17157237)
 texture = ExtResource("21_1wct6")
 
-[node name="GalleryLeftSofaBottomBlocker" type="StaticBody2D" parent="." unique_id=1701100025]
-position = Vector2(-836.99994, -5484)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaBottomBlocker" unique_id=1701100026]
-position = Vector2(-6.1035156e-05, 0)
-shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
-
-[node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d2" type="Sprite2D" parent="." unique_id=54717235]
-position = Vector2(396.99997, -5010.0005)
-scale = Vector2(0.29537672, 0.3307927)
+[node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d2" type="Sprite2D" parent="." unique_id=1708463117]
+position = Vector2(562, -4984)
+scale = Vector2(0.20077443, 0.22484748)
 texture = ExtResource("22_sjfai")
 
-[node name="GalleryBottomSofaLeftBlocker" type="StaticBody2D" parent="." unique_id=1701100027]
-position = Vector2(396.99997, -5010.0005)
+[node name="GalleryLeftSofaBottomBlocker" type="StaticBody2D" parent="." unique_id=1701100025]
+position = Vector2(1046.0313, -4238.75)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryBottomSofaLeftBlocker" unique_id=1701100028]
-shape = SubResource("RectangleShape2D_gallery_bottom_sofa_blocker")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaBottomBlocker" unique_id=1701100026]
+shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
 
 [node name="43170b6Aa9Baa8b110b0c553c948Dae6b52a458b01955a164c74e28725e6Bc3b" type="Sprite2D" parent="." unique_id=1164932428]
-position = Vector2(184, -4988)
-scale = Vector2(0.38043478, 0.27173913)
+position = Vector2(-856, -5793)
+scale = Vector2(0.17970976, 0.1295285)
 texture = ExtResource("23_jxdyh")
 
 [node name="GalleryPortraitBlocker" type="StaticBody2D" parent="." unique_id=1701100029]
 position = Vector2(184, -4988)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryPortraitBlocker" unique_id=1701100030]
-position = Vector2(-54, -22)
+position = Vector2(242, -8)
 shape = SubResource("RectangleShape2D_gallery_portrait_blocker")
 
 [node name="7Da8a2809475220Fdc175a9f6064948791806Bc588463b8e62a3b5b7e21e9Fd8" type="Sprite2D" parent="." unique_id=520597397]
-position = Vector2(-721, -7467)
-scale = Vector2(0.7, 0.7)
+position = Vector2(-714.025, -7382)
+scale = Vector2(0.33907774, 0.3849316)
 texture = ExtResource("26_63dio")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="7Da8a2809475220Fdc175a9f6064948791806Bc588463b8e62a3b5b7e21e9Fd8" unique_id=943935173]
+position = Vector2(-1.401123, 275.375)
+scale = Vector2(1, 1.0000004)
+shape = SubResource("RectangleShape2D_1ogn6")
 
 [node name="FinalCue9" type="Sprite2D" parent="." unique_id=1701100040]
 z_index = 5
-position = Vector2(-854.85004, -7296.65)
-scale = Vector2(0.13719174, 0.14472626)
+position = Vector2(-788.00006, -7277.0005)
+scale = Vector2(0.05020547, 0.05296273)
 texture = ExtResource("27_nine_tex")
 
+[node name="Cue9Area" type="Area2D" parent="FinalCue9" unique_id=1701100058]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FinalCue9/Cue9Area" unique_id=1701100059]
+shape = SubResource("CircleShape2D_cue_interact_small")
+
 [node name="20Bbe2Fb0Ca1f86b9a851Aa450f13d7489Bfbf67d68c53b6Ffcf7Ba34711d11a" type="Sprite2D" parent="." unique_id=1730021127]
-position = Vector2(116.999985, -3737)
+position = Vector2(181.00003, -3737)
 rotation = -3.1415927
 scale = Vector2(0.34601638, 0.26130113)
 texture = ExtResource("23_63dio")
 
 [node name="Aae55b979Ae4d2b8316620f22b60Bafaa9Fab8243219561c464Fa457a048Da8b" type="Sprite2D" parent="." unique_id=1022709396]
-position = Vector2(570.00006, -4209)
-scale = Vector2(0.3619863, 0.22602734)
+position = Vector2(570.0001, -4244)
+scale = Vector2(0.27414382, 0.17117773)
 texture = ExtResource("24_vnl4d")
 
 [node name="Ae0395Bac2Ae26Eaf7Ff00e4Fff4Fcfc3Cc453365d815d3Acfcf6d8Dc3a17Aa8" type="Sprite2D" parent="." unique_id=1063488614]
-position = Vector2(951, -4214.0005)
-scale = Vector2(0.2316781, 0.20821884)
+position = Vector2(1046.0313, -4238.75)
+scale = Vector2(0.15894696, 0.1428523)
 texture = ExtResource("25_g0gsg")
 
-[node name="Ed900c66f15a05063e0a9f81a76d860Ebd90e628Fcbe4e5d72d0703818Fe89c7" type="Sprite2D" parent="." unique_id=2144847783]
-position = Vector2(-456, -7306)
-scale = Vector2(0.3030822, 0.18458916)
-texture = ExtResource("27_vnl4d")
-
 [node name="Ed900c66f15a05063e0a9f81a76d860Ebd90e628Fcbe4e5d72d0703818Fe89c8" type="Sprite2D" parent="." unique_id=1245554786]
-position = Vector2(66, -5029)
-scale = Vector2(0.3030822, 0.18458916)
+position = Vector2(415.99997, -5000)
+scale = Vector2(0.17337325, 0.14475434)
 texture = ExtResource("27_vnl4d")

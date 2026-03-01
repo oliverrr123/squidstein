@@ -261,6 +261,7 @@ var storage_door_sprite: Sprite2D
 var gallery_code_door_blocker: StaticBody2D
 var gallery_code_blocker_shape: CollisionShape2D
 var gallery_code_lock_icon: Sprite2D
+var gallery_code_keypad: Sprite2D
 var gallery_code_door_lintel: CanvasItem
 var gallery_code_unlocked := false
 var gallery_code_entry_active := false
@@ -1287,6 +1288,7 @@ func _setup_gallery_code_door() -> void:
 	gallery_code_door_blocker = get_node_or_null("SecondFloor/GalleryCodeDoorBlocker") as StaticBody2D
 	gallery_code_blocker_shape = get_node_or_null("SecondFloor/GalleryCodeDoorBlocker/CollisionShape2D") as CollisionShape2D
 	gallery_code_lock_icon = get_node_or_null("SecondFloor/GalleryCodeLockIcon") as Sprite2D
+	gallery_code_keypad = get_node_or_null("SecondFloor/Keypad") as Sprite2D
 	gallery_code_door_lintel = get_node_or_null("DoorLintel") as CanvasItem
 	_update_gallery_code_door()
 
@@ -1304,14 +1306,14 @@ func _update_gallery_code_door() -> void:
 func _handle_gallery_code_lock_interaction() -> bool:
 	if gallery_code_unlocked:
 		return false
-	var lock_pos := Vector2(-150, -6076)
-	if gallery_code_lock_icon != null:
-		lock_pos = gallery_code_lock_icon.global_position
-	var near_lock := player.global_position.distance_to(lock_pos) <= 150.0
+	var keypad_pos := Vector2(-235, -6012)
+	if gallery_code_keypad != null:
+		keypad_pos = gallery_code_keypad.global_position
+	var near_keypad := player.global_position.distance_to(keypad_pos) <= 150.0
 	if gallery_code_entry_active:
 		_refresh_gallery_code_prompt()
 		return true
-	if not near_lock:
+	if not near_keypad:
 		return false
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to enter gallery door code."

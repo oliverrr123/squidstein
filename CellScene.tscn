@@ -32,6 +32,7 @@
 [ext_resource type="Texture2D" uid="uid://qkssdax6c0th" path="res://7da8a2809475220fdc175a9f6064948791806bc588463b8e62a3b5b7e21e9fd8.png" id="26_63dio"]
 [ext_resource type="Texture2D" uid="uid://cakxvgqng4jfg" path="res://nine.png" id="27_nine_tex"]
 [ext_resource type="Texture2D" uid="uid://c58tmsn5vmt6s" path="res://ed900c66f15a05063e0a9f81a76d860ebd90e628fcbe4e5d72d0703818fe89c7.png" id="27_vnl4d"]
+[ext_resource type="Texture2D" uid="uid://cl6bc4e2eklh" path="res://keypad.png" id="28_keypad_tex"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cell_top"]
 size = Vector2(1200, 64)
@@ -170,13 +171,13 @@ size = Vector2(190, 180)
 size = Vector2(448, 123.5)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_cue_interact"]
-radius = 623.509
+radius = 781.258
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_x5i73"]
 size = Vector2(271.09158, 1112.2319)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_left_sofa_blocker"]
-size = Vector2(158.00002, 190.5)
+size = Vector2(139.99994, 471)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gallery_bottom_sofa_blocker"]
 size = Vector2(277.5, 189)
@@ -185,7 +186,7 @@ size = Vector2(277.5, 189)
 size = Vector2(82, 165.53516)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1ogn6"]
-size = Vector2(598.6827, 135.08496)
+size = Vector2(203.00002, 50.542725)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_cue_interact_small"]
 radius = 1374.4834
@@ -703,7 +704,6 @@ position = Vector2(-91.99994, -3920)
 shape = SubResource("CircleShape2D_storage_box_interact")
 
 [node name="StorageBoxSprite" type="Sprite2D" parent="StorageRoom/StorageBox" unique_id=1701100013]
-z_index = 5
 scale = Vector2(0.22, 0.22)
 texture = ExtResource("20_box_tex")
 
@@ -831,10 +831,18 @@ position = Vector2(-689, -6164)
 shape = SubResource("RectangleShape2D_hallway_bottom")
 
 [node name="GalleryCodeLockIcon" type="Sprite2D" parent="SecondFloor" unique_id=1701100016]
-z_index = 6
+z_as_relative = false
+z_index = 50
 position = Vector2(-689, -6164)
 scale = Vector2(0.126, 0.126)
 texture = ExtResource("24_gallery_lock_tex")
+
+[node name="Keypad" type="Sprite2D" parent="SecondFloor" unique_id=1701100060]
+z_as_relative = false
+z_index = 50
+position = Vector2(-509.99997, -6090)
+scale = Vector2(0.05699485, 0.05699485)
+texture = ExtResource("28_keypad_tex")
 
 [node name="UpperElevatorArea" type="Area2D" parent="SecondFloor" unique_id=1701100007]
 position = Vector2(-2.437, -5041.448)
@@ -857,7 +865,6 @@ color = Color(0, 0, 0, 1)
 polygon = PackedVector2Array(-760, -4400, -696, -4400, -696, -3440, -760, -3440)
 
 [node name="Cue2Sprite" type="Sprite2D" parent="." unique_id=1701100041]
-z_index = 6
 position = Vector2(5637.6, -4932.4)
 scale = Vector2(0.07890425, 0.07890425)
 texture = ExtResource("20_cue2_tex")
@@ -868,7 +875,6 @@ texture = ExtResource("20_cue2_tex")
 shape = SubResource("CircleShape2D_cue_interact")
 
 [node name="Cue3Sprite" type="Sprite2D" parent="." unique_id=1701100042]
-z_index = 6
 position = Vector2(4838.9, -5322.1)
 scale = Vector2(0.07410971, 0.07273978)
 texture = ExtResource("20_cue3_tex")
@@ -879,7 +885,6 @@ texture = ExtResource("20_cue3_tex")
 shape = SubResource("CircleShape2D_cue_interact")
 
 [node name="Cue4Sprite" type="Sprite2D" parent="." unique_id=1701100043]
-z_index = 6
 position = Vector2(2168, 553)
 scale = Vector2(0.07041096, 0.07041096)
 texture = ExtResource("20_cue4_tex")
@@ -890,7 +895,6 @@ texture = ExtResource("20_cue4_tex")
 shape = SubResource("CircleShape2D_cue_interact")
 
 [node name="Cue6Sprite" type="Sprite2D" parent="." unique_id=1701100044]
-z_index = 6
 position = Vector2(1043, -4157)
 scale = Vector2(0.065, 0.065)
 texture = ExtResource("20_cue6_tex")
@@ -1086,6 +1090,7 @@ texture = ExtResource("21_1wct6")
 position = Vector2(181.00005, -3737)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaTopBlocker" unique_id=1701100022]
+position = Vector2(-1086, -1853)
 shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
 
 [node name="Da97326e8b689Fe878b985a25Be09a374f0e040d135f768d683Ca46Fdc2Daa2d" type="Sprite2D" parent="." unique_id=355713573]
@@ -1114,6 +1119,7 @@ texture = ExtResource("22_sjfai")
 position = Vector2(1046.0313, -4238.75)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryLeftSofaBottomBlocker" unique_id=1701100026]
+position = Vector2(0, -171.75)
 shape = SubResource("RectangleShape2D_gallery_left_sofa_blocker")
 
 [node name="43170b6Aa9Baa8b110b0c553c948Dae6b52a458b01955a164c74e28725e6Bc3b" type="Sprite2D" parent="." unique_id=1164932428]
@@ -1133,8 +1139,11 @@ position = Vector2(-714.025, -7382)
 scale = Vector2(0.33907774, 0.3849316)
 texture = ExtResource("26_63dio")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="7Da8a2809475220Fdc175a9f6064948791806Bc588463b8e62a3b5b7e21e9Fd8" unique_id=943935173]
-position = Vector2(-1.401123, 275.375)
+[node name="GalleryDeskBlocker" type="StaticBody2D" parent="." unique_id=943935172]
+position = Vector2(-714.025, -7382)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GalleryDeskBlocker" unique_id=943935173]
+position = Vector2(-1.4749756, 107.728516)
 scale = Vector2(1, 1.0000004)
 shape = SubResource("RectangleShape2D_1ogn6")
 
@@ -1150,6 +1159,7 @@ texture = ExtResource("27_nine_tex")
 shape = SubResource("CircleShape2D_cue_interact_small")
 
 [node name="20Bbe2Fb0Ca1f86b9a851Aa450f13d7489Bfbf67d68c53b6Ffcf7Ba34711d11a" type="Sprite2D" parent="." unique_id=1730021127]
+z_index = -10
 position = Vector2(181.00003, -3737)
 rotation = -3.1415927
 scale = Vector2(0.34601638, 0.26130113)

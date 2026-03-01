@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bsboyrd3bdbme"
+path="res://.godot/imported/Bubble heavy 2.wav-557ab857e82cd230c053657f4eddc7ef.sample"
+
+[deps]
+
+source_file="res://Bubble heavy 2.wav"
+dest_files=["res://.godot/imported/Bubble heavy 2.wav-557ab857e82cd230c053657f4eddc7ef.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

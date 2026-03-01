@@ -48,6 +48,19 @@ const PLAYER_BED_TEXTURE := preload("res://Created_a_guy_with_a_torn_white_tank_
 const DOCTOR_DEFAULT_TEXTURE := preload("res://doc.png")
 const LOCK_ICON_TEXTURE := preload("res://lock.png")
 const SUNBURST_TEXTURE := preload("res://sunburst.png")
+const DIALOGUE_CHAR_SFX := preload("res://Hit damage 1.wav")
+const DOOR_OPEN_SFX := preload("res://Retro Weapon Reload Best A 03.wav")
+const FOOTSTEP_SFX := preload("res://foley_footstep_concrete_4.wav")
+const GUARD_GRAB_SFX := preload("res://book_close.wav")
+const DOCTOR_DRESS_SFX := preload("res://book_open.wav")
+const CELL_SPAWN_SFX := preload("res://cough_double.wav")
+const INTERACT_SFX := preload("res://chips_place_1.wav")
+const DOCTOR_KILL_SFX := preload("res://squelching_1.wav")
+const BOSS_HIT_SFX := preload("res://Boss hit 1.wav")
+const FIGHT_MUSIC := preload("res://fight.mp3")
+const ALARM_SFX := preload("res://Retro Alarm Long 02.wav")
+const BREATHING_SFX := preload("res://breathing.mp3")
+const ANESTHESIA_FAIL_SFX := preload("res://Bubble heavy 2.wav")
 const KIDNAPPER_PACK_ROOT := "res://Kidnapper"
 const VICTIM_PACK_ROOT := "res://Victim"
 const DOCTOR_PACK_ROOT := "res://Doc"
@@ -265,6 +278,34 @@ var checkpoint_names: Array[String] = [
 	"Gallery",
 ]
 var current_checkpoint_index := 0
+var dialogue_audio: AudioStreamPlayer
+var door_audio: AudioStreamPlayer
+var event_audio: AudioStreamPlayer
+var interact_audio: AudioStreamPlayer
+var fight_audio: AudioStreamPlayer
+var alarm_audio: AudioStreamPlayer
+var breathing_audio: AudioStreamPlayer
+var guard_walk_audio: AudioStreamPlayer
+var other_guy_walk_audio: AudioStreamPlayer
+var doctor_walk_audio: AudioStreamPlayer
+var dialogue_type_text := ""
+var dialogue_suffix := ""
+var dialogue_visible_count := 0
+var dialogue_type_timer := 0.0
+var dialogue_char_interval := 0.02
+var dialogue_typing_active := false
+var guard_walk_step_timer := 0.0
+var other_guy_walk_step_timer := 0.0
+var doctor_walk_step_timer := 0.0
+var npc_walk_step_interval := 0.34
+var fight_audio_active := false
+var fight_audio_fade_direction := 0
+var fight_audio_target_db := -11.0
+var fight_audio_min_db := -40.0
+var fight_audio_fade_speed := 28.0
+var fight_audio_pulse_amount := 1.4
+var fight_audio_pulse_speed := 2.2
+var fight_audio_time := 0.0
 
 func _ready() -> void:
 	dialogue_ui.layer = 35
@@ -294,6 +335,44 @@ func _ready() -> void:
 	_setup_gallery_interior()
 	_setup_cue_seven_pickup()
 	_setup_cue_eleven_pickup()
+	dialogue_audio = AudioStreamPlayer.new()
+	dialogue_audio.stream = DIALOGUE_CHAR_SFX
+	dialogue_audio.volume_db = -13.0
+	add_child(dialogue_audio)
+	door_audio = AudioStreamPlayer.new()
+	door_audio.stream = DOOR_OPEN_SFX
+	door_audio.volume_db = -10.0
+	add_child(door_audio)
+	event_audio = AudioStreamPlayer.new()
+	event_audio.volume_db = -9.0
+	add_child(event_audio)
+	interact_audio = AudioStreamPlayer.new()
+	interact_audio.stream = INTERACT_SFX
+	interact_audio.volume_db = -12.0
+	add_child(interact_audio)
+	fight_audio = AudioStreamPlayer.new()
+	fight_audio.stream = FIGHT_MUSIC
+	fight_audio.volume_db = fight_audio_min_db
+	add_child(fight_audio)
+	alarm_audio = AudioStreamPlayer.new()
+	alarm_audio.stream = ALARM_SFX
+	alarm_audio.volume_db = -11.0
+	add_child(alarm_audio)
+	if not alarm_audio.finished.is_connected(_on_alarm_finished):
+		alarm_audio.finished.connect(_on_alarm_finished)
+	breathing_audio = AudioStreamPlayer.new()
+	breathing_audio.stream = BREATHING_SFX
+	breathing_audio.volume_db = -12.0
+	add_child(breathing_audio)
+	if not breathing_audio.finished.is_connected(_on_breathing_finished):
+		breathing_audio.finished.connect(_on_breathing_finished)
+	guard_walk_audio = _create_walk_audio_player()
+	other_guy_walk_audio = _create_walk_audio_player()
+	doctor_walk_audio = _create_walk_audio_player()
+	if not music_player.finished.is_connected(_on_music_finished):
+		music_player.finished.connect(_on_music_finished)
+	if not music_player.playing:
+		music_player.play()
 	var pre_lock_body := pre_surgery_door_lock.get_parent() as CollisionObject2D
 	if pre_lock_body != null:
 		pre_surgery_lock_default_layer = pre_lock_body.collision_layer
@@ -312,7 +391,76 @@ func _ready() -> void:
 func _refresh_visibility_next_frame() -> void:
 	_update_visibility_fx()
 
+func _on_music_finished() -> void:
+	if music_player != null:
+		music_player.play()
+
+func _on_alarm_finished() -> void:
+	if alarm_audio != null and alarm_audio.playing == false and anesthesia_started and not anesthesia_won:
+		# Keep alarm loop local to the anesthesia fight phase only.
+		alarm_audio.play()
+
+func _on_breathing_finished() -> void:
+	if breathing_audio != null and breathing_audio.playing == false and anesthesia_started and not anesthesia_won:
+		breathing_audio.play()
+
+func _start_alarm_loop() -> void:
+	if alarm_audio == null:
+		return
+	if not alarm_audio.playing:
+		alarm_audio.play()
+
+func _stop_alarm_loop() -> void:
+	if alarm_audio == null:
+		return
+	alarm_audio.stop()
+
+func _start_breathing_loop() -> void:
+	if breathing_audio == null:
+		return
+	if not breathing_audio.playing:
+		breathing_audio.play()
+
+func _stop_breathing_loop() -> void:
+	if breathing_audio == null:
+		return
+	breathing_audio.stop()
+
+func _start_fight_music_fade_in() -> void:
+	if fight_audio == null:
+		return
+	fight_audio_active = true
+	fight_audio_fade_direction = 1
+	fight_audio_time = 0.0
+	fight_audio.volume_db = fight_audio_min_db
+	if not fight_audio.playing:
+		fight_audio.play()
+
+func _start_fight_music_fade_out() -> void:
+	if fight_audio == null or not fight_audio_active:
+		return
+	fight_audio_fade_direction = -1
+
+func _update_fight_audio(delta: float) -> void:
+	if fight_audio == null or not fight_audio_active:
+		return
+	fight_audio_time += delta
+	if fight_audio_fade_direction > 0:
+		fight_audio.volume_db = minf(fight_audio_target_db, fight_audio.volume_db + fight_audio_fade_speed * delta)
+		if fight_audio.volume_db >= fight_audio_target_db:
+			fight_audio_fade_direction = 0
+	elif fight_audio_fade_direction < 0:
+		fight_audio.volume_db = maxf(fight_audio_min_db, fight_audio.volume_db - fight_audio_fade_speed * delta)
+		if fight_audio.volume_db <= fight_audio_min_db:
+			fight_audio.stop()
+			fight_audio_active = false
+			fight_audio_fade_direction = 0
+	else:
+		fight_audio.volume_db = fight_audio_target_db + sin(fight_audio_time * TAU * fight_audio_pulse_speed) * fight_audio_pulse_amount
+
 func _physics_process(delta: float) -> void:
+	_update_fight_audio(delta)
+	_update_dialogue_typewriter(delta)
 	_update_keycard_fx(delta)
 	_update_inventory_visibility()
 	_update_visibility_fx()
@@ -320,9 +468,13 @@ func _physics_process(delta: float) -> void:
 	match state:
 		SequenceState.DIALOGUE:
 			if Input.is_action_just_pressed("interact"):
+				if _finish_dialogue_typing():
+					return
 				_advance_dialogue()
 		SequenceState.GUARD_TO_GUY:
 			if dialogue_panel.visible and Input.is_action_just_pressed("interact"):
+				if _finish_dialogue_typing():
+					return
 				_advance_dialogue()
 			_try_unlock_hall_door_on_guard_touch()
 			var reached := _move_along_path(guard, to_guy_path, guard_speed, delta)
@@ -333,15 +485,20 @@ func _physics_process(delta: float) -> void:
 				path_index = 0
 		SequenceState.ESCORT_OUT:
 			if dialogue_panel.visible and Input.is_action_just_pressed("interact"):
+				if _finish_dialogue_typing():
+					return
 				_advance_dialogue()
 			var reached := _move_along_path(guard, out_path, guard_speed, delta)
 			if escorting and other_guy.visible:
 				var follow_target := guard.global_position + Vector2(90, 0)
 				var previous_position := other_guy.global_position
 				other_guy.global_position = other_guy.global_position.move_toward(follow_target, npc_follow_speed * delta)
-				_update_other_guy_visual(other_guy.global_position - previous_position)
+				var other_motion := other_guy.global_position - previous_position
+				_update_other_guy_visual(other_motion)
+				other_guy_walk_step_timer = _update_npc_walk_audio(other_guy_walk_audio, other_guy_walk_step_timer, delta, other_motion)
 			if reached:
 				_update_other_guy_visual(Vector2.ZERO)
+				other_guy_walk_step_timer = 0.0
 				guard.visible = false
 				other_guy.visible = false
 				dialogue_panel.visible = false
@@ -364,14 +521,19 @@ func _physics_process(delta: float) -> void:
 		SequenceState.ESCORT_PLAYER:
 			_try_unlock_end_room_door_on_guard_touch()
 			var reached_dest := _move_along_path(guard, escort_player_path, guard_escort_speed, delta)
-			# Hard-attach player to guard so pickup looks intentional.
+			var previous_player_position := player.global_position
 			player.global_position = guard.global_position + PLAYER_ESCORT_OFFSET
+			var player_motion := player.global_position - previous_player_position
+			player.set_scripted_motion_visual(player_motion)
+			player.update_scripted_walk_audio(delta, player_motion)
 			if reached_dest:
 				player.global_position = BED_POSITION
+				player.set_bed_pose()
 				path_index = 0
 				state = SequenceState.PLAYER_ON_BED
 		SequenceState.PLAYER_ON_BED:
 			player.global_position = BED_POSITION
+			player.set_bed_pose()
 			path_index = 0
 			guard_exit_running = true
 			doctor_sequence_started = false
@@ -380,15 +542,18 @@ func _physics_process(delta: float) -> void:
 			anesthesia_won = false
 			current_checkpoint_index = 1
 			doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
+			_set_doctor_default_visual()
 			_start_anesthesia_spam()
 		SequenceState.GUARD_LEAVE_END_ROOM:
 			player.global_position = BED_POSITION
+			player.set_bed_pose()
 			_update_guard_exit(delta)
 			if not doctor_sequence_started and guard.global_position.x <= 3360.0:
 				doctor_sequence_started = true
 				state = SequenceState.DOCTOR_APPROACH
 		SequenceState.DOCTOR_APPROACH:
 			player.global_position = BED_POSITION
+			player.set_bed_pose()
 			_update_guard_exit(delta)
 			doctor_approach_timer += delta
 			var reached_doctor := _move_to_point(doctor, BED_POSITION + DOCTOR_TARGET_OFFSET, doctor_speed, delta)
@@ -401,6 +566,7 @@ func _physics_process(delta: float) -> void:
 			var t := float(Time.get_ticks_msec()) / 1000.0
 			var doctor_base := BED_POSITION + DOCTOR_TARGET_OFFSET
 			player.global_position = BED_POSITION + Vector2(sin(t * 34.0) * 5.0, cos(t * 25.0) * 2.5)
+			player.set_bed_pose()
 			doctor.global_position = doctor_base + Vector2(sin(t * 31.0) * -3.0, cos(t * 28.0) * 2.0)
 			_update_timing_marker(delta)
 			if Input.is_action_just_pressed("interact"):
@@ -408,7 +574,9 @@ func _physics_process(delta: float) -> void:
 		SequenceState.ANESTHESIA_SPAM:
 			_update_guard_exit(delta)
 			player.global_position = BED_POSITION
+			player.set_bed_pose()
 			doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
+			_set_doctor_default_visual()
 			spam_progress -= spam_decay_per_second * delta
 			if spam_progress < 0.0:
 				_on_anesthesia_failed()
@@ -421,7 +589,9 @@ func _physics_process(delta: float) -> void:
 					_start_anesthesia_minigame()
 		SequenceState.DOCTOR_SHOUT:
 			player.global_position = BED_POSITION
+			player.set_bed_pose()
 			doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
+			_set_doctor_default_visual()
 			shout_timer += delta
 			if anesthesia_won and shout_timer >= shout_duration:
 				dialogue_panel.visible = false
@@ -430,21 +600,28 @@ func _physics_process(delta: float) -> void:
 		SequenceState.FIGHT_WIN:
 			fight_timer += delta
 			var k: float = minf(1.0, fight_timer / fight_duration)
+			var previous_player_position := player.global_position
 			player.global_position = BED_POSITION.lerp(PLAYER_BED_SIDE_POSITION, k)
+			var player_motion := player.global_position - previous_player_position
+			player.set_scripted_motion_visual(player_motion)
+			player.update_scripted_walk_audio(delta, player_motion)
 			doctor.global_position = (BED_POSITION + DOCTOR_TARGET_OFFSET).lerp(BED_POSITION + Vector2(120, 0), k)
 			if fight_timer >= fight_duration:
+				_play_event_sfx(DOCTOR_KILL_SFX, -7.0, 0.97, 1.03)
 				_set_doctor_default_visual()
 				fight_timer = 0.0
 				state = SequenceState.PUT_DOCTOR_ON_BED
 		SequenceState.PUT_DOCTOR_ON_BED:
 			player.global_position = PLAYER_BED_SIDE_POSITION
-			doctor.global_position = doctor.global_position.move_toward(DOCTOR_BED_POSITION, doctor_speed * delta)
-			if doctor.global_position.distance_to(DOCTOR_BED_POSITION) < 4.0:
-				doctor.global_position = DOCTOR_BED_POSITION
-				dialogue_panel.visible = false
-				disguise_area.set_deferred("monitoring", true)
-				player.set_physics_process(true)
-				state = SequenceState.DONE
+			player.set_scripted_motion_visual(Vector2.ZERO)
+			doctor.global_position = DOCTOR_BED_POSITION
+			_set_doctor_bed_pose()
+			_start_fight_music_fade_out()
+			dialogue_panel.visible = false
+			disguise_area.set_deferred("monitoring", true)
+			player.clear_scripted_motion_visual()
+			player.set_physics_process(true)
+			state = SequenceState.DONE
 		SequenceState.EPILOGUE:
 			if Input.is_action_just_pressed("interact"):
 				dialogue_panel.visible = false
@@ -485,11 +662,13 @@ func _move_guard_toward(point: Vector2, speed: float, _delta: float) -> bool:
 		guard.velocity = Vector2.ZERO
 		guard.move_and_slide()
 		_update_guard_visual(Vector2.ZERO)
+		guard_walk_step_timer = 0.0
 		return true
 
 	guard.velocity = to_target.normalized() * speed
 	guard.move_and_slide()
 	_update_guard_visual(guard.velocity)
+	guard_walk_step_timer = _update_npc_walk_audio(guard_walk_audio, guard_walk_step_timer, _delta, guard.velocity)
 	return guard.global_position.distance_to(point) < 8.0
 
 func _setup_guard_visual() -> void:
@@ -634,6 +813,7 @@ func _set_doctor_default_visual() -> void:
 	doctor_cube.modulate = Color(1, 1, 1, 1)
 	doctor_cube.play("idle_south")
 	doctor_cube.stop()
+	doctor_cube.rotation = 0.0
 	doctor_facing = "south"
 
 func _set_doctor_texture_visual(texture: Texture2D) -> void:
@@ -648,12 +828,22 @@ func _set_doctor_texture_visual(texture: Texture2D) -> void:
 	doctor_cube.modulate = Color(1, 1, 1, 1)
 	doctor_cube.play("idle_south")
 	doctor_cube.stop()
+	doctor_cube.rotation = 0.0
+
+func _set_doctor_bed_pose() -> void:
+	if doctor_cube == null:
+		return
+	doctor_cube.rotation = PI * 0.5
+	if doctor_cube.sprite_frames != null and doctor_cube.sprite_frames.has_animation("idle_east"):
+		doctor_cube.play("idle_east")
+		doctor_cube.stop()
 
 func _update_doctor_visual(motion: Vector2) -> void:
 	if doctor_cube == null:
 		return
 	if doctor_cube.sprite_frames != doctor_frames:
 		return
+	doctor_cube.rotation = 0.0
 	if motion.length_squared() <= 0.0001:
 		doctor_cube.play("idle_%s" % doctor_facing)
 		doctor_cube.stop()
@@ -671,7 +861,9 @@ func _move_to_point(actor: Node2D, point: Vector2, speed: float, delta: float) -
 	var previous_position := actor.global_position
 	actor.global_position = actor.global_position.move_toward(point, speed * delta)
 	if actor == doctor:
-		_update_doctor_visual(actor.global_position - previous_position)
+		var doctor_motion := actor.global_position - previous_position
+		_update_doctor_visual(doctor_motion)
+		doctor_walk_step_timer = _update_npc_walk_audio(doctor_walk_audio, doctor_walk_step_timer, delta, doctor_motion)
 	return actor.global_position.distance_to(point) < 2.0
 
 func _move_along_path(actor: Node2D, points: Array[Vector2], speed: float, delta: float) -> bool:
@@ -693,6 +885,7 @@ func _on_story_trigger_body_entered(body: Node2D) -> void:
 
 	trigger_area.set_deferred("monitoring", false)
 	player.set_physics_process(false)
+	player.set_idle_facing("east")
 	_start_dialogue([
 		"You: What the hell is going on?",
 		"Other Guy: GubaBuba kidnapped us. He's stealing and covering it up.",
@@ -704,23 +897,25 @@ func _start_dialogue(lines: Array[String]) -> void:
 	dialogue_index = 0
 	state = SequenceState.DIALOGUE
 	dialogue_panel.visible = true
-	dialogue_label.text = "%s\n\n[Press E]" % dialogue_lines[dialogue_index]
+	_show_dialogue_text(dialogue_lines[dialogue_index], "\n\n[Press E]", true)
 
 func _advance_dialogue() -> void:
 	dialogue_index += 1
 	if dialogue_index < dialogue_lines.size():
-		dialogue_label.text = "%s\n\n[Press E]" % dialogue_lines[dialogue_index]
+		_show_dialogue_text(dialogue_lines[dialogue_index], "\n\n[Press E]", true)
 		if dialogue_index == GUARD_START_DIALOGUE_INDEX:
 			_start_guard_sequence()
 		return
 
 	dialogue_panel.visible = false
+	player.clear_scripted_motion_visual()
 	player.set_physics_process(true)
 	if state == SequenceState.DIALOGUE:
 		room_vision_enabled = true
 		state = SequenceState.DONE
 
 func _start_guard_sequence() -> void:
+	player.clear_scripted_motion_visual()
 	player.set_physics_process(true)
 	state = SequenceState.GUARD_TO_GUY
 	path_index = 0
@@ -729,12 +924,91 @@ func _start_guard_sequence() -> void:
 
 func _show_epilogue(line: String) -> void:
 	dialogue_panel.visible = true
-	dialogue_label.text = "%s\n\n[Press E]" % line
+	_show_dialogue_text(line, "\n\n[Press E]", true)
 	state = SequenceState.EPILOGUE
 
 func _show_pickup_line(line: String) -> void:
 	dialogue_panel.visible = true
-	dialogue_label.text = line
+	_show_dialogue_text(line, "", true)
+
+func _show_dialogue_text(text: String, suffix: String = "", typed: bool = false) -> void:
+	dialogue_suffix = suffix
+	if not typed:
+		dialogue_typing_active = false
+		dialogue_type_text = ""
+		dialogue_visible_count = 0
+		dialogue_type_timer = 0.0
+		dialogue_label.text = text + suffix
+		return
+	dialogue_type_text = text
+	dialogue_visible_count = 0
+	dialogue_type_timer = 0.0
+	dialogue_typing_active = true
+	dialogue_label.text = suffix
+
+func _update_dialogue_typewriter(delta: float) -> void:
+	if not dialogue_typing_active:
+		return
+	dialogue_type_timer += delta
+	while dialogue_type_timer >= dialogue_char_interval and dialogue_visible_count < dialogue_type_text.length():
+		dialogue_type_timer -= dialogue_char_interval
+		dialogue_visible_count += 1
+		var visible_text := dialogue_type_text.substr(0, dialogue_visible_count)
+		dialogue_label.text = visible_text + dialogue_suffix
+		var current_char := dialogue_type_text.substr(dialogue_visible_count - 1, 1)
+		if not current_char.strip_edges().is_empty() and dialogue_audio != null:
+			dialogue_audio.pitch_scale = randf_range(0.96, 1.04)
+			dialogue_audio.play()
+	if dialogue_visible_count >= dialogue_type_text.length():
+		dialogue_typing_active = false
+		dialogue_label.text = dialogue_type_text + dialogue_suffix
+
+func _finish_dialogue_typing() -> bool:
+	if not dialogue_typing_active:
+		return false
+	dialogue_typing_active = false
+	dialogue_visible_count = dialogue_type_text.length()
+	dialogue_label.text = dialogue_type_text + dialogue_suffix
+	return true
+
+func _create_walk_audio_player() -> AudioStreamPlayer:
+	var audio := AudioStreamPlayer.new()
+	audio.stream = FOOTSTEP_SFX
+	audio.volume_db = -12.0
+	add_child(audio)
+	return audio
+
+func _update_npc_walk_audio(audio: AudioStreamPlayer, timer: float, delta: float, motion: Vector2) -> float:
+	if audio == null:
+		return timer
+	if motion.length_squared() <= 0.0001:
+		return 0.0
+	timer -= delta
+	if timer > 0.0:
+		return timer
+	audio.pitch_scale = randf_range(0.96, 1.04)
+	audio.play()
+	return npc_walk_step_interval
+
+func _play_door_open_sfx() -> void:
+	if door_audio == null:
+		return
+	door_audio.pitch_scale = randf_range(0.98, 1.02)
+	door_audio.play()
+
+func _play_event_sfx(stream: AudioStream, volume_db: float = -9.0, pitch_min: float = 0.98, pitch_max: float = 1.02) -> void:
+	if event_audio == null or stream == null:
+		return
+	event_audio.stream = stream
+	event_audio.volume_db = volume_db
+	event_audio.pitch_scale = randf_range(pitch_min, pitch_max)
+	event_audio.play()
+
+func _play_interact_sfx() -> void:
+	if interact_audio == null:
+		return
+	interact_audio.pitch_scale = randf_range(0.98, 1.02)
+	interact_audio.play()
 
 func _start_guard_return_for_player() -> void:
 	guard.visible = true
@@ -745,6 +1019,7 @@ func _start_guard_return_for_player() -> void:
 func _start_escort_player() -> void:
 	player.set_physics_process(false)
 	player.global_position = guard.global_position + PLAYER_ESCORT_OFFSET
+	_play_event_sfx(GUARD_GRAB_SFX, -8.0)
 	path_index = 0
 	state = SequenceState.ESCORT_PLAYER
 
@@ -753,6 +1028,7 @@ func _try_unlock_cell_door_on_guard_touch() -> void:
 		return
 	if guard.global_position.distance_to(cell_door_lock.global_position) <= CELL_DOOR_TOUCH_DISTANCE:
 		cell_door_lock.disabled = true
+		_play_door_open_sfx()
 		if cell_lock_icon != null:
 			cell_lock_icon.visible = false
 		if cell_door_lintel != null:
@@ -763,6 +1039,7 @@ func _try_unlock_hall_door_on_guard_touch() -> void:
 		return
 	if guard.global_position.distance_to(HALL_DOOR_POSITION) <= CELL_DOOR_TOUCH_DISTANCE:
 		hall_door_unlocked = true
+		_play_door_open_sfx()
 		if hall_lock_icon != null:
 			hall_lock_icon.visible = false
 		if hall_door_lintel != null:
@@ -773,6 +1050,8 @@ func _try_unlock_end_room_door_on_guard_touch() -> void:
 		return
 	if guard.global_position.distance_to(END_ROOM_DOOR_POSITION) <= CELL_DOOR_TOUCH_DISTANCE:
 		end_room_door_unlocked = true
+		_play_door_open_sfx()
+		_start_fight_music_fade_in()
 		if end_room_lock_icon != null:
 			end_room_lock_icon.visible = false
 		if end_room_door_lintel != null:
@@ -792,8 +1071,12 @@ func _start_anesthesia_minigame() -> void:
 	timing_line.visible = true
 	target_zone.visible = true
 	needle.visible = true
+	_show_pickup_line("Doctor: YO WHAT ARE YOU DOING?")
 	struggle_label.text = "Fight: Press E when marker hits the green zone"
 	minigame_ui.visible = true
+	player.set_bed_pose()
+	_start_alarm_loop()
+	_start_breathing_loop()
 	state = SequenceState.ANESTHESIA_MINIGAME
 
 func _start_anesthesia_spam() -> void:
@@ -804,6 +1087,8 @@ func _start_anesthesia_spam() -> void:
 	struggle_label.text = "Resist anesthesia: mash E"
 	minigame_ui.visible = true
 	_refresh_spam_ui()
+	player.set_bed_pose()
+	_start_breathing_loop()
 	state = SequenceState.ANESTHESIA_SPAM
 
 func _update_timing_marker(delta: float) -> void:
@@ -825,13 +1110,17 @@ func _try_timing_hit() -> void:
 	var in_zone: bool = absf(timing_pos - target_center) <= half
 	if in_zone:
 		current_hits += 1
+		_play_event_sfx(BOSS_HIT_SFX, -7.0, 0.98, 1.02)
 		_refresh_hits_label()
 		if current_hits >= required_hits:
 			minigame_ui.visible = false
 			anesthesia_won = true
-			_show_pickup_line("Doctor: YO WHAT ARE YOU DOING?")
-			shout_timer = 0.0
-			state = SequenceState.DOCTOR_SHOUT
+			_stop_breathing_loop()
+			_stop_alarm_loop()
+			dialogue_panel.visible = false
+			_play_event_sfx(DOCTOR_KILL_SFX, -7.0, 0.97, 1.03)
+			_set_doctor_default_visual()
+			state = SequenceState.PUT_DOCTOR_ON_BED
 			return
 		_pick_new_target()
 		_update_timing_ui()
@@ -910,6 +1199,7 @@ func _handle_disguise_interaction() -> void:
 
 	if not is_disguised and player_in_disguise_area:
 		if Input.is_action_just_pressed("interact"):
+			_play_interact_sfx()
 			_wear_doctor_clothes()
 		return
 
@@ -919,6 +1209,7 @@ func _handle_disguise_interaction() -> void:
 			dialogue_panel.visible = true
 			dialogue_label.text = "Press E to use Doctor ID (Cue 1) on pre-surgery room."
 			if Input.is_action_just_pressed("interact"):
+				_play_interact_sfx()
 				if _consume_key_use():
 					_unlock_pre_surgery_door()
 					dialogue_label.text = "Doctor ID accepted. Door unlocked.\n\n[Press E]"
@@ -963,6 +1254,7 @@ func _handle_gallery_code_lock_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to enter gallery door code."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		gallery_code_entry_active = true
 		gallery_code_buffer = ""
 		_refresh_gallery_code_prompt()
@@ -979,6 +1271,7 @@ func _submit_gallery_code() -> void:
 		gallery_code_entry_active = false
 		gallery_code_buffer = ""
 		_update_gallery_code_door()
+		_play_door_open_sfx()
 		dialogue_panel.visible = true
 		dialogue_label.text = "Code accepted. Door unlocked.\n\n[Press E]"
 		return
@@ -994,8 +1287,11 @@ func _wear_doctor_clothes() -> void:
 	_refresh_key_hud()
 	player_in_disguise_area = false
 	disguise_area.set_deferred("monitoring", false)
+	_play_interact_sfx()
+	_play_event_sfx(DOCTOR_DRESS_SFX, -8.0)
 	player.set_disguise_visual()
 	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
+	_set_doctor_bed_pose()
 	_show_keycard_fx_for_cue(1)
 	dialogue_panel.visible = false
 
@@ -1077,6 +1373,7 @@ func _unlock_pre_surgery_door() -> void:
 	if pre_surgery_unlocked:
 		return
 	pre_surgery_unlocked = true
+	_play_door_open_sfx()
 	current_checkpoint_index = 2
 	pre_surgery_door_lock.disabled = true
 	pre_surgery_door_lock.set_deferred("disabled", true)
@@ -1349,6 +1646,7 @@ func _handle_cue_two_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to pick up Cue 2."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		_set_cue_collected(2, true)
 		_update_cue_two_visibility()
 		_show_keycard_fx_for_cue(2)
@@ -1393,6 +1691,7 @@ func _handle_cue_three_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to pick up Cue 3 (Blue Card)."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		_set_cue_collected(3, true)
 		current_checkpoint_index = 3
 		_update_cue_three_visibility()
@@ -1509,8 +1808,10 @@ func _handle_storage_door_interaction() -> bool:
 	if cue_collected.size() > 2 and cue_collected[2]:
 		dialogue_label.text = "Press E to use Blue Card (Cue 3) on Storage door."
 		if Input.is_action_just_pressed("interact"):
+			_play_interact_sfx()
 			storage_unlocked = true
 			_update_storage_door_visibility()
+			_play_door_open_sfx()
 			dialogue_label.text = "Storage unlocked."
 	else:
 		dialogue_label.text = "Storage door locked. Need Blue Card."
@@ -1556,6 +1857,7 @@ func _handle_cue_four_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to pick up Cue 4 (Crowbar)."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		_set_cue_collected(4, true)
 		_update_cue_four_visibility()
 		_show_keycard_fx_for_cue(4)
@@ -1609,6 +1911,7 @@ func _handle_storage_box_interaction() -> bool:
 	if cue_collected.size() > 3 and cue_collected[3]:
 		dialogue_label.text = "Press E to use Crowbar (Cue 4) on the box."
 		if Input.is_action_just_pressed("interact"):
+			_play_interact_sfx()
 			_set_cue_collected(5, true)
 			cue_notes[5] = CUE_FIVE_INVOICE_TEXT
 			_show_keycard_fx_for_cue(5)
@@ -1659,6 +1962,7 @@ func _handle_storage_elevator_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to take elevator to Upper Floor."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		var target := _get_elevator_spawn_position(upper_elevator_area, UPPER_ELEVATOR_POSITION)
 		player.global_position = target
 		storage_elevator_in_range = false
@@ -1673,6 +1977,7 @@ func _handle_upper_elevator_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to take elevator to Storage."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		var target := _get_elevator_spawn_position(storage_elevator_area, STORAGE_ELEVATOR_POSITION)
 		player.global_position = target
 		upper_elevator_in_range = false
@@ -1787,6 +2092,7 @@ func _handle_cue_eleven_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to inspect Cue 11."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		_set_cue_collected(11, true)
 		cue_notes[11] = CUE_ELEVEN_CHARITY_TEXT
 		_update_cue_eleven_visibility()
@@ -1825,6 +2131,7 @@ func _handle_cue_seven_interaction() -> bool:
 	dialogue_panel.visible = true
 	dialogue_label.text = "Press E to inspect statue fragment (Cue 7)."
 	if Input.is_action_just_pressed("interact"):
+		_play_interact_sfx()
 		_set_cue_collected(7, true)
 		cue_notes[7] = CUE_SEVEN_STATUE_TEXT
 		current_checkpoint_index = 4
@@ -1865,6 +2172,9 @@ func _get_key_texture_for_uses(uses: int) -> Texture2D:
 	return key_hud_fallback_textures[clamped - 1]
 
 func _on_anesthesia_failed() -> void:
+	_stop_breathing_loop()
+	_stop_alarm_loop()
+	_play_event_sfx(ANESTHESIA_FAIL_SFX, -8.0, 0.98, 1.02)
 	_restart_from_checkpoint(0)
 
 func _reset_to_checkpoint(index: int) -> void:
@@ -1883,9 +2193,17 @@ func _reset_to_checkpoint(index: int) -> void:
 	anesthesia_started = false
 	anesthesia_won = false
 	spam_progress = spam_required * 0.5
+	_stop_breathing_loop()
+	_stop_alarm_loop()
+	fight_audio_active = false
+	fight_audio_fade_direction = 0
+	if fight_audio != null:
+		fight_audio.stop()
+		fight_audio.volume_db = fight_audio_min_db
 	gallery_code_unlocked = false
 	gallery_code_entry_active = false
 	gallery_code_buffer = ""
+	player.clear_scripted_motion_visual()
 	_update_gallery_code_door()
 	call_deferred("_refresh_visibility_next_frame")
 
@@ -1912,6 +2230,7 @@ func _restart_from_checkpoint(index: int) -> void:
 
 	if index == 0:
 		# Full story reset (cell start).
+		_play_event_sfx(CELL_SPAWN_SFX, -8.0)
 		room_vision_enabled = true
 		has_keycard = false
 		key_uses = 0
@@ -2004,6 +2323,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		trigger_area.set_deferred("monitoring", false)
 		player.set_disguise_visual()
 		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
+		_set_doctor_bed_pose()
 		_unlock_pre_surgery_door()
 		dialogue_panel.visible = false
 		minigame_ui.visible = false
@@ -2041,6 +2361,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		trigger_area.set_deferred("monitoring", false)
 		player.set_disguise_visual()
 		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
+		_set_doctor_bed_pose()
 		_unlock_pre_surgery_door()
 		dialogue_panel.visible = false
 		minigame_ui.visible = false
@@ -2082,6 +2403,7 @@ func _restart_from_checkpoint(index: int) -> void:
 	trigger_area.set_deferred("monitoring", false)
 	player.set_disguise_visual()
 	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
+	_set_doctor_bed_pose()
 	_unlock_pre_surgery_door()
 	dialogue_panel.visible = false
 	minigame_ui.visible = false

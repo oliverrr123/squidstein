@@ -5,15 +5,25 @@ extends CharacterBody2D
 
 const DEFAULT_PACK_ROOT := "res://Created_a_guy_with_a_torn_white_tank_top_red_short"
 const DISGUISE_PACK_ROOT := "res://Doc"
+const WALK_SFX := preload("res://foley_footstep_concrete_4.wav")
 
 var default_frames: SpriteFrames
 var disguise_frames: SpriteFrames
 var using_disguise := false
 var facing := "south"
+var scripted_visual_override := false
+var bed_pose_enabled := false
+var walk_audio: AudioStreamPlayer
+var walk_step_timer := 0.0
+var walk_step_interval := 0.34
 
 func _ready() -> void:
 	default_frames = _build_default_frames()
 	disguise_frames = _build_pack_frames(DISGUISE_PACK_ROOT)
+	walk_audio = AudioStreamPlayer.new()
+	walk_audio.stream = WALK_SFX
+	walk_audio.volume_db = -12.0
+	add_child(walk_audio)
 	set_default_visual()
 
 func _physics_process(_delta: float) -> void:
@@ -25,7 +35,9 @@ func _physics_process(_delta: float) -> void:
 	velocity = dir * speed
 	move_and_slide()
 	global_position = global_position.round()
-	_update_visual(dir)
+	if not scripted_visual_override:
+		_update_visual(dir)
+	_update_walk_audio(_delta, dir)
 
 func set_default_visual() -> void:
 	using_disguise = false
@@ -35,7 +47,10 @@ func set_default_visual() -> void:
 	visual.modulate = Color(1, 1, 1, 1)
 	visual.play("idle_south")
 	visual.stop()
+	visual.rotation = 0.0
 	facing = "south"
+	scripted_visual_override = false
+	bed_pose_enabled = false
 
 func set_disguise_visual() -> void:
 	using_disguise = true
@@ -45,7 +60,64 @@ func set_disguise_visual() -> void:
 	visual.modulate = Color(1, 1, 1, 1)
 	visual.play("idle_south")
 	visual.stop()
+	visual.rotation = 0.0
 	facing = "south"
+	scripted_visual_override = false
+	bed_pose_enabled = false
+
+func set_scripted_motion_visual(motion: Vector2) -> void:
+	if visual == null:
+		return
+	scripted_visual_override = true
+	bed_pose_enabled = false
+	visual.rotation = 0.0
+	_update_visual(motion)
+
+func update_scripted_walk_audio(delta: float, motion: Vector2) -> void:
+	_update_walk_audio(delta, motion)
+
+func clear_scripted_motion_visual() -> void:
+	if visual == null:
+		return
+	scripted_visual_override = false
+	bed_pose_enabled = false
+	visual.rotation = 0.0
+	visual.play("idle_%s" % facing)
+	visual.stop()
+
+func set_idle_facing(direction: String) -> void:
+	if visual == null:
+		return
+	facing = direction
+	scripted_visual_override = false
+	bed_pose_enabled = false
+	visual.rotation = 0.0
+	visual.play("idle_%s" % facing)
+	visual.stop()
+
+func set_bed_pose() -> void:
+	if visual == null:
+		return
+	scripted_visual_override = true
+	bed_pose_enabled = true
+	visual.rotation = PI * 0.5
+	visual.play("idle_east")
+	visual.stop()
+	walk_step_timer = 0.0
+
+func _update_walk_audio(delta: float, dir: Vector2) -> void:
+	if walk_audio == null:
+		return
+	var moving := dir.length_squared() > 0.0001 and not bed_pose_enabled
+	if not moving:
+		walk_step_timer = 0.0
+		return
+	walk_step_timer -= delta
+	if walk_step_timer > 0.0:
+		return
+	walk_step_timer = walk_step_interval
+	walk_audio.pitch_scale = randf_range(0.96, 1.04)
+	walk_audio.play()
 
 func _update_visual(dir: Vector2) -> void:
 	if visual == null:

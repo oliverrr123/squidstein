@@ -89,7 +89,7 @@ const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
 const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
 const GALLERY_STATUE_POSITION := Vector2(0, -5420)
 const CUE_SEVEN_STATUE_TEXT := "Cue 7 (Statue): Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
-const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\n\nLikely a PR shield to look untouchable while hiding what happens in this facility."
+const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\nAn internal note repeats the campaign year: 2014.\n\nThis likely doubles as the gallery door code."
 const GALLERY_CODE_REQUIRED := "2014"
 const GALLERY_CODE_MAX_LEN := 4
 const ROOM_CELL := Rect2(0, 0, 1200, 800)
@@ -1314,7 +1314,7 @@ func _get_collected_cue_count() -> int:
 
 func _setup_cue_two_pickup() -> void:
 	cue_two_pickup = null
-	cue_two_sprite = null
+	cue_two_sprite = _ensure_runtime_cue_sprite(cue_two_sprite, "Cue2Sprite", 2, CUE_TWO_PICKUP_POSITION, Vector2(0.24, 0.24))
 	cue_two_in_range = false
 	_update_cue_two_visibility()
 
@@ -1358,7 +1358,7 @@ func _handle_cue_two_interaction() -> bool:
 
 func _setup_cue_three_pickup() -> void:
 	cue_three_pickup = null
-	cue_three_sprite = null
+	cue_three_sprite = _ensure_runtime_cue_sprite(cue_three_sprite, "Cue3Sprite", 3, CUE_THREE_PICKUP_POSITION, Vector2(0.24, 0.24))
 	cue_three_in_range = false
 	_update_cue_three_visibility()
 
@@ -1462,6 +1462,11 @@ func _setup_door_lock_icons() -> void:
 	storage_lock_icon.z_index = 20
 	add_child(storage_lock_icon)
 
+func _setup_gallery_interior() -> void:
+	# Gallery props are now authored directly in CellScene.tscn via inspector.
+	# Keep this function as a compatibility no-op for older call sites.
+	pass
+
 func _update_storage_door_visibility() -> void:
 	if storage_door_blocker != null:
 		storage_door_blocker.collision_layer = 1 if not storage_unlocked else 0
@@ -1513,7 +1518,7 @@ func _handle_storage_door_interaction() -> bool:
 
 func _setup_cue_four_pickup() -> void:
 	cue_four_pickup = null
-	cue_four_sprite = null
+	cue_four_sprite = _ensure_runtime_cue_sprite(cue_four_sprite, "Cue4Sprite", 4, STORAGE_CUE_FOUR_POSITION, Vector2(0.2, 0.2))
 	cue_four_in_range = false
 	_update_cue_four_visibility()
 
@@ -1700,7 +1705,9 @@ func _setup_visibility_fx() -> void:
 func _update_visibility_fx() -> void:
 	if visibility_fx_rect == null:
 		return
-	visibility_fx_rect.visible = room_vision_enabled and not dialogue_panel.visible and not minigame_ui.visible
+	# Keep room-vision active during dialogue (including cue pickups).
+	# Only hide it for minigames/explicit disabled states.
+	visibility_fx_rect.visible = room_vision_enabled and not minigame_ui.visible
 	if not visibility_fx_rect.visible:
 		return
 	var mat := visibility_fx_rect.material as ShaderMaterial
@@ -1740,9 +1747,24 @@ func _get_current_room_world_rect() -> Rect2:
 
 func _setup_cue_seven_pickup() -> void:
 	cue_seven_pickup = null
-	cue_seven_sprite = null
+	cue_seven_sprite = _ensure_runtime_cue_sprite(cue_seven_sprite, "Cue7Sprite", 7, GALLERY_STATUE_POSITION, Vector2(0.22, 0.22))
 	cue_seven_in_range = false
 	_update_cue_seven_visibility()
+
+func _ensure_runtime_cue_sprite(existing: Sprite2D, node_name: String, cue_index: int, world_pos: Vector2, cue_scale: Vector2) -> Sprite2D:
+	if existing != null and is_instance_valid(existing):
+		return existing
+	var from_scene := get_node_or_null(node_name) as Sprite2D
+	if from_scene != null:
+		return from_scene
+	var sprite := Sprite2D.new()
+	sprite.name = node_name
+	sprite.texture = _get_key_texture_for_uses(cue_index)
+	sprite.global_position = world_pos
+	sprite.scale = cue_scale
+	sprite.z_index = 6
+	add_child(sprite)
+	return sprite
 
 func _setup_cue_eleven_pickup() -> void:
 	cue_eleven_sprite = get_node_or_null("SecondFloor/GalleryCue11") as Sprite2D

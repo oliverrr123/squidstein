@@ -65,6 +65,11 @@ const DOCTOR_KILL_SFX := preload("res://squelching_1.wav")
 const BOSS_HIT_SFX := preload("res://Boss hit 1.wav")
 const CROWBAR_PICKUP_SFX := preload("res://weapon_pick_up.wav")
 const PAPER_PICKUP_SFX := preload("res://map_open.wav")
+const TIMING_HIT_MARGIN_PX := 10.0
+const LOOT_MESSAGE_DURATION := 10.0
+const ACTION_MESSAGE_DURATION := 2.5
+const KEYCARD_FX_FLY_DELAY := 0.45
+const KEYCARD_FX_FLY_DURATION := 0.6
 const ELEVATOR_UP_SFX := preload("res://hydraulic_up.wav")
 const ELEVATOR_DOWN_SFX := preload("res://hydraulic_down.wav")
 const ELEVATOR_CLOSED_TEX := preload("res://elevator_closed.png")
@@ -77,6 +82,22 @@ const PIXEL_FONT := preload("res://PressStart2P-Regular.ttf")
 const KIDNAPPER_PACK_ROOT := "res://Kidnapper"
 const VICTIM_PACK_ROOT := "res://Victim"
 const DOCTOR_PACK_ROOT := "res://Doc"
+const INTRO_DIALOGUE_DELAY := 3.0
+const INTRO_DIALOGUE_LINES := [
+	"You wake up in a cell.",
+	"You have no idea how you got there or what happened to you.",
+]
+const ESCORT_PLAYER_DIALOGUE_DELAY := 3.0
+const ESCORT_PLAYER_FINAL_LINE_DURATION := 3.0
+const ESCORT_PLAYER_DIALOGUE_LINES := [
+	"You: What are they doing to me?",
+	"You: Are they gonna steal my organs?",
+]
+const POST_DOCTOR_DIALOGUE_DELAY := 3.0
+const POST_DOCTOR_DIALOGUE_LINES := [
+	"You: I need to find all the evidence.",
+	"You: And call the police and shut this whole thing down.",
+]
 const PRE_SURGERY_UNLOCK_DISTANCE := 140.0
 const KEY_USE_MAX := 11
 const CUE_DISPLAY_TOTAL := 9
@@ -100,6 +121,7 @@ const CHECKPOINT_DOCTOR_POSITION := Vector2(3920, -4920)
 const CHECKPOINT_PRE_SURGERY_POSITION := Vector2(5240, -5080)
 const CHECKPOINT_STORAGE_POSITION := Vector2(520, -3920)
 const CHECKPOINT_GALLERY_POSITION := Vector2(0, -5520)
+const CHECKPOINT_FINAL_POSITION := Vector2(-590, -7360)
 const CUE_TWO_PICKUP_POSITION := Vector2(5520, -5080)
 const CUE_THREE_PICKUP_POSITION := Vector2(4960, -5200) # Staff Room desk
 const STORAGE_DOOR_POSITION := Vector2(1168, -3920) # Hallway wall gateway to storage area
@@ -109,18 +131,20 @@ const STORAGE_CUE_FOUR_POSITION := Vector2(1980, 560)
 const STORAGE_BOX_POSITION := Vector2(120, -3920)
 const STORAGE_ELEVATOR_POSITION := Vector2(536, -3760)
 const UPPER_ELEVATOR_POSITION := Vector2(0, -5040)
-const CUE_FIVE_INVOICE_TEXT := "Invoice (Cue 5):\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
-const CUE_SIX_TERMINAL_KEY_TEXT := "Cue 6 (Terminal Key): Encrypted backup authorization token.\nUse it on the boss laptop to request outside backup."
+const CUE_FIVE_INVOICE_TEXT := "Invoice:\nFrom: Black Reef Cargo Node\nTo: Isla de Niebla Research Depot (unlisted island)\nConsignee: Nereid Bio-Logistics\nGoods: 12 sealed medical crates (human material)\n\nThis links the operation to an unknown island site."
+const CUE_SIX_TERMINAL_KEY_TEXT := "Terminal Key: Encrypted backup authorization token.\nUse it on the boss laptop to request outside backup."
 const HALL_DOOR_POSITION := Vector2(1552, 400)
 const END_ROOM_DOOR_POSITION := Vector2(3472, -4920)
 const GALLERY_CLOCK_POSITION := Vector2(-560, -5580)
 const GALLERY_BOOKSHELF_POSITION := Vector2(560, -5560)
 const GALLERY_STATUE_POSITION := Vector2(0, -5420)
-const CUE_SEVEN_STATUE_TEXT := "Cue 7 (Statue): Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
-const CUE_ELEVEN_CHARITY_TEXT := "Cue 11 (Charity Press File): Public reports show he funded a children's hospital charity campaign with large donations.\nAn internal note repeats the campaign year: 2014.\n\nThis likely doubles as the gallery door code."
-const CUE_NINE_FINAL_TEXT := "Cue 9 (Boss Desk Archive): Consolidated ledger linking donations, shipping fronts, and staff payments.\nThis is the final proof package."
+const CUE_SEVEN_STATUE_TEXT := "Statue Fragment: Carved gallery statue fragment.\nIt appears ceremonial and tied to this facility's hidden leadership.\n\nLikely important for the upper-floor puzzle later."
+const CUE_ELEVEN_CHARITY_TEXT := "Charity Press File: Public reports show he funded a children's hospital charity campaign with large donations.\nAn internal note repeats the campaign year: 2014.\n\nThis likely doubles as the gallery door code."
+const CUE_NINE_FINAL_TEXT := "Boss Desk Archive: Consolidated ledger linking donations, shipping fronts, and staff payments.\nThis is the final proof package."
 const GALLERY_CODE_REQUIRED := "2014"
 const GALLERY_CODE_MAX_LEN := 4
+const GALLERY_CODE_INTERACT_HALF_WIDTH := 240.0
+const GALLERY_CODE_INTERACT_HALF_HEIGHT := 180.0
 const CUE_NINE_DESK_POSITION := Vector2(-721, -7428)
 const CUE_SIX_PICKUP_POSITION := Vector2(951, -4214)
 const CUE_SIX_INTERACT_POSITION := Vector2(875, -4214)
@@ -227,22 +251,34 @@ var keycard_fx_fade_duration := 0.45
 var keycard_fx_spin_speed := 1.2
 var keycard_fx_final_scale := 1.18
 var keycard_fx_icon_final_scale := 1.08
+var keycard_fx_icon_fly_start := Vector2.ZERO
+var keycard_fx_icon_fly_target := Vector2.ZERO
+var keycard_fx_icon_fly_active := false
 var keycard_fx_layer: CanvasLayer
 var keycard_fx_rect: TextureRect
 var keycard_fx_label: Label
 var keycard_fx_icon: TextureRect
+var key_hud_layer: CanvasLayer
 var key_hud_icon: TextureRect
 var key_hud_label: Label
 var key_hud_fallback_textures: Array[Texture2D] = []
 var cue_collected: Array[bool] = []
 var cue_notes: Dictionary = {}
 var latest_collected_cue_index := 0
+var pending_inventory_reveal_index := 0
+var inventory_slot_cues: Array[int] = []
 var inventory_layer: CanvasLayer
 var inventory_panel: Panel
+var inventory_row: HBoxContainer
 var inventory_slots: Array[TextureRect] = []
 var inventory_hover_panel: Panel
+var inventory_hover_title_label: Label
 var inventory_hover_label: Label
 var hovered_inventory_index := -1
+var post_doctor_dialogue_timer := 0.0
+var post_doctor_dialogue_index := 0
+var post_doctor_line_hide_timer := 0.0
+var post_doctor_dialogue_wait_for_hallway := false
 var cue_two_pickup: Area2D
 var cue_two_sprite: Sprite2D
 var cue_two_in_range := false
@@ -310,6 +346,7 @@ var checkpoint_positions: Array[Vector2] = [
 	CHECKPOINT_PRE_SURGERY_POSITION,
 	CHECKPOINT_STORAGE_POSITION,
 	CHECKPOINT_GALLERY_POSITION,
+	CHECKPOINT_FINAL_POSITION,
 ]
 var checkpoint_names: Array[String] = [
 	"Cell",
@@ -317,6 +354,7 @@ var checkpoint_names: Array[String] = [
 	"Pre-Surgery Room",
 	"Storage Wing",
 	"Gallery",
+	"Finale",
 ]
 var current_checkpoint_index := 0
 var dialogue_audio: AudioStreamPlayer
@@ -335,6 +373,15 @@ var dialogue_visible_count := 0
 var dialogue_type_timer := 0.0
 var dialogue_char_interval := 0.02
 var dialogue_typing_active := false
+var loot_message_timer := 0.0
+var loot_message_active := false
+var intro_dialogue_active := false
+var intro_dialogue_pending := false
+var intro_dialogue_timer := 0.0
+var intro_dialogue_index := 0
+var escort_player_dialogue_timer := 0.0
+var escort_player_dialogue_index := 0
+var escort_player_line_hide_timer := 0.0
 var laptop_type_text := ""
 var laptop_type_suffix := ""
 var laptop_visible_count := 0
@@ -357,7 +404,7 @@ var guard_parent_index := -1
 var blackout_layer: CanvasLayer
 var blackout_rect: ColorRect
 var spawn_fade_alpha := 1.0
-var spawn_fade_duration := 1.2
+var spawn_fade_duration := 5.0
 
 func _ready() -> void:
 	dialogue_ui.layer = 35
@@ -366,8 +413,10 @@ func _ready() -> void:
 	minigame_ui.visible = false
 	disguise_area.monitoring = false
 	cue_collected.resize(KEY_USE_MAX)
+	inventory_slot_cues.resize(KEY_USE_MAX)
 	for i in range(KEY_USE_MAX):
 		cue_collected[i] = false
+		inventory_slot_cues[i] = 0
 	_setup_guard_visual()
 	_setup_other_guy_visual()
 	_setup_doctor_visual()
@@ -521,11 +570,31 @@ func _physics_process(delta: float) -> void:
 	_update_dialogue_typewriter(delta)
 	_update_laptop_typewriter(delta)
 	_update_keycard_fx(delta)
+	_update_loot_message_timer(delta)
 	_update_inventory_visibility()
 	_update_visibility_fx()
 	_update_blackout_overlay(delta)
 	_handle_checkpoint_cheat_input()
 	match state:
+		SequenceState.IDLE:
+			if intro_dialogue_pending:
+				intro_dialogue_timer -= delta
+				if intro_dialogue_timer <= 0.0:
+					intro_dialogue_pending = false
+					dialogue_panel.visible = true
+					intro_dialogue_index = 0
+					_show_dialogue_text(INTRO_DIALOGUE_LINES[intro_dialogue_index], "\n\n[Press E]", true)
+			if intro_dialogue_active and Input.is_action_just_pressed("interact"):
+				if _finish_dialogue_typing():
+					return
+				intro_dialogue_index += 1
+				if intro_dialogue_index < INTRO_DIALOGUE_LINES.size():
+					_show_dialogue_text(INTRO_DIALOGUE_LINES[intro_dialogue_index], "\n\n[Press E]", true)
+				else:
+					intro_dialogue_active = false
+					dialogue_panel.visible = false
+					if trigger_area != null and trigger_area.monitoring and trigger_area.overlaps_body(player):
+						_on_story_trigger_body_entered(player)
 		SequenceState.DIALOGUE:
 			if Input.is_action_just_pressed("interact"):
 				if _finish_dialogue_typing():
@@ -586,6 +655,18 @@ func _physics_process(delta: float) -> void:
 			var player_motion := player.global_position - previous_player_position
 			player.set_scripted_motion_visual(player_motion)
 			player.update_scripted_walk_audio(delta, player_motion)
+			if escort_player_dialogue_index < ESCORT_PLAYER_DIALOGUE_LINES.size():
+				escort_player_dialogue_timer -= delta
+				if escort_player_dialogue_timer <= 0.0:
+					_show_pickup_line(ESCORT_PLAYER_DIALOGUE_LINES[escort_player_dialogue_index])
+					escort_player_line_hide_timer = ESCORT_PLAYER_FINAL_LINE_DURATION
+					escort_player_dialogue_index += 1
+					if escort_player_dialogue_index < ESCORT_PLAYER_DIALOGUE_LINES.size():
+						escort_player_dialogue_timer = ESCORT_PLAYER_DIALOGUE_DELAY
+			if escort_player_line_hide_timer > 0.0:
+				escort_player_line_hide_timer -= delta
+				if escort_player_line_hide_timer <= 0.0 and dialogue_panel != null:
+					dialogue_panel.visible = false
 			if reached_dest:
 				player.global_position = BED_POSITION
 				player.set_bed_pose()
@@ -628,9 +709,9 @@ func _physics_process(delta: float) -> void:
 			player.global_position = BED_POSITION + Vector2(sin(t * 34.0) * 5.0, cos(t * 25.0) * 2.5)
 			player.set_bed_pose()
 			doctor.global_position = doctor_base + Vector2(sin(t * 31.0) * -3.0, cos(t * 28.0) * 2.0)
-			_update_timing_marker(delta)
 			if Input.is_action_just_pressed("interact"):
 				_try_timing_hit()
+			_update_timing_marker(delta)
 		SequenceState.ANESTHESIA_SPAM:
 			_update_guard_exit(delta)
 			player.global_position = BED_POSITION
@@ -677,6 +758,10 @@ func _physics_process(delta: float) -> void:
 			doctor.global_position = DOCTOR_BED_POSITION
 			_set_doctor_bed_pose()
 			cue_four_available = true
+			post_doctor_dialogue_index = 0
+			post_doctor_dialogue_timer = 0.0
+			post_doctor_line_hide_timer = 0.0
+			post_doctor_dialogue_wait_for_hallway = true
 			_update_cue_four_visibility()
 			_start_fight_music_fade_out()
 			dialogue_panel.visible = false
@@ -689,6 +774,21 @@ func _physics_process(delta: float) -> void:
 				dialogue_panel.visible = false
 				state = SequenceState.DONE
 		SequenceState.DONE:
+			if post_doctor_dialogue_wait_for_hallway and not ROOM_END.has_point(player.global_position) and player.global_position.x < ROOM_END.position.x:
+				post_doctor_dialogue_wait_for_hallway = false
+				post_doctor_dialogue_timer = POST_DOCTOR_DIALOGUE_DELAY
+			if not post_doctor_dialogue_wait_for_hallway and post_doctor_dialogue_index < POST_DOCTOR_DIALOGUE_LINES.size():
+				post_doctor_dialogue_timer -= delta
+				if post_doctor_dialogue_timer <= 0.0:
+					_show_pickup_line(POST_DOCTOR_DIALOGUE_LINES[post_doctor_dialogue_index])
+					post_doctor_line_hide_timer = POST_DOCTOR_DIALOGUE_DELAY
+					post_doctor_dialogue_index += 1
+					if post_doctor_dialogue_index < POST_DOCTOR_DIALOGUE_LINES.size():
+						post_doctor_dialogue_timer = POST_DOCTOR_DIALOGUE_DELAY
+			if post_doctor_line_hide_timer > 0.0:
+				post_doctor_line_hide_timer -= delta
+				if post_doctor_line_hide_timer <= 0.0 and dialogue_panel != null:
+					dialogue_panel.visible = false
 			_handle_disguise_interaction()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -942,6 +1042,8 @@ func _move_along_path(actor: Node2D, points: Array[Vector2], speed: float, delta
 func _on_story_trigger_body_entered(body: Node2D) -> void:
 	if body != player:
 		return
+	if intro_dialogue_active:
+		return
 	if state != SequenceState.IDLE:
 		return
 
@@ -1039,6 +1141,30 @@ func _set_dialogue_message(text: String) -> void:
 		dialogue_hint_label.visible = false
 		dialogue_hint_label.text = ""
 	dialogue_label.text = text
+
+func _show_loot_message(text: String, duration: float = LOOT_MESSAGE_DURATION) -> void:
+	dialogue_panel.visible = true
+	_set_dialogue_message(text)
+	loot_message_active = true
+	loot_message_timer = duration
+
+func _clear_loot_message() -> void:
+	loot_message_active = false
+	loot_message_timer = 0.0
+
+func _update_loot_message_timer(delta: float) -> void:
+	if not loot_message_active:
+		return
+	if gallery_code_entry_active or ending_active:
+		return
+	loot_message_timer -= delta
+	if loot_message_timer > 0.0:
+		return
+	loot_message_active = false
+	dialogue_panel.visible = false
+
+func _should_show_cue_ui() -> bool:
+	return cue_four_available or is_disguised or current_checkpoint_index >= 2
 
 func _update_dialogue_typewriter(delta: float) -> void:
 	if not dialogue_typing_active:
@@ -1162,6 +1288,9 @@ func _start_escort_player() -> void:
 	player.global_position = guard.global_position + PLAYER_ESCORT_OFFSET
 	_play_event_sfx(GUARD_GRAB_SFX, -8.0)
 	path_index = 0
+	escort_player_dialogue_index = 0
+	escort_player_dialogue_timer = ESCORT_PLAYER_DIALOGUE_DELAY
+	escort_player_line_hide_timer = 0.0
 	state = SequenceState.ESCORT_PLAYER
 
 func _try_unlock_cell_door_on_guard_touch() -> void:
@@ -1213,7 +1342,7 @@ func _start_anesthesia_minigame() -> void:
 	target_zone.visible = true
 	needle.visible = true
 	_show_pickup_line("Doctor: YO WHAT ARE YOU DOING?")
-	struggle_label.text = "Fight: Press E when marker hits the green zone"
+	struggle_label.text = "Fight the doctor: Press E"
 	minigame_ui.visible = true
 	player.set_bed_pose()
 	_start_alarm_loop()
@@ -1225,7 +1354,7 @@ func _start_anesthesia_spam() -> void:
 	timing_line.visible = true
 	target_zone.visible = true
 	needle.visible = false
-	struggle_label.text = "Resist anesthesia: mash E"
+	struggle_label.text = "Resist anesthesia: Spam E"
 	minigame_ui.visible = true
 	_refresh_spam_ui()
 	player.set_bed_pose()
@@ -1247,8 +1376,9 @@ func _try_timing_hit() -> void:
 	if anesthesia_elapsed < anesthesia_min_duration:
 		return
 
-	var half: float = target_width * 0.5
-	var in_zone: bool = absf(timing_pos - target_center) <= half
+	var needle_rect := needle.get_global_rect()
+	var target_rect := target_zone.get_global_rect().grow_individual(TIMING_HIT_MARGIN_PX, 0.0, TIMING_HIT_MARGIN_PX, 0.0)
+	var in_zone: bool = needle_rect.intersects(target_rect, true)
 	if in_zone:
 		current_hits += 1
 		_play_event_sfx(BOSS_HIT_SFX, -7.0, 0.98, 1.02)
@@ -1371,25 +1501,36 @@ func _handle_disguise_interaction() -> void:
 			_wear_doctor_clothes()
 		return
 
-	if has_keycard and not pre_surgery_door_lock.disabled:
+	if not pre_surgery_door_lock.disabled:
 		var near_door := player.global_position.distance_to(pre_surgery_door_lock.global_position) <= PRE_SURGERY_UNLOCK_DISTANCE
-		if near_door:
-			dialogue_panel.visible = true
-		_set_dialogue_message("Press E to use Doctor ID (Cue 1) on pre-surgery room.")
+		if not near_door:
+			if dialogue_panel.visible and not loot_message_active and not gallery_code_entry_active and post_doctor_line_hide_timer <= 0.0:
+				dialogue_panel.visible = false
+			return
+		if not has_keycard:
+			if Input.is_action_just_pressed("interact"):
+				_show_pickup_line("You: It's locked.")
+			return
 		if Input.is_action_just_pressed("interact"):
 			_play_interact_sfx()
 			if _consume_key_use():
 				_unlock_pre_surgery_door()
-				_set_dialogue_message("Doctor ID accepted. Door unlocked.")
+				_show_loot_message("Doctor ID accepted. Door unlocked.", ACTION_MESSAGE_DURATION)
 			else:
-				_set_dialogue_message("No cue left.")
+				_show_loot_message("No cue left.", ACTION_MESSAGE_DURATION)
 		return
 
-	if is_disguised and dialogue_panel.visible and Input.is_action_just_pressed("interact"):
+	if is_disguised and dialogue_panel.visible and post_doctor_line_hide_timer <= 0.0 and Input.is_action_just_pressed("interact"):
+		_clear_loot_message()
 		dialogue_panel.visible = false
 		return
 
-	if dialogue_panel.visible and not gallery_code_entry_active and Input.is_action_just_pressed("interact"):
+	if dialogue_panel.visible and not gallery_code_entry_active and post_doctor_line_hide_timer <= 0.0 and Input.is_action_just_pressed("interact"):
+		_clear_loot_message()
+		dialogue_panel.visible = false
+		return
+
+	if dialogue_panel.visible and not loot_message_active and not gallery_code_entry_active and post_doctor_line_hide_timer <= 0.0:
 		dialogue_panel.visible = false
 
 func _setup_gallery_code_door() -> void:
@@ -1414,17 +1555,23 @@ func _update_gallery_code_door() -> void:
 func _handle_gallery_code_lock_interaction() -> bool:
 	if gallery_code_unlocked:
 		return false
-	var keypad_pos := Vector2(-235, -6012)
-	if gallery_code_keypad != null:
-		keypad_pos = gallery_code_keypad.global_position
-	var near_keypad := player.global_position.distance_to(keypad_pos) <= 150.0
+	var interact_center := Vector2(-235, -6012)
+	if gallery_code_door_blocker != null:
+		interact_center = gallery_code_door_blocker.global_position
+	elif gallery_code_keypad != null:
+		interact_center = gallery_code_keypad.global_position
+	var to_code_door := player.global_position - interact_center
+	var near_keypad := absf(to_code_door.x) <= GALLERY_CODE_INTERACT_HALF_WIDTH and absf(to_code_door.y) <= GALLERY_CODE_INTERACT_HALF_HEIGHT
 	if gallery_code_entry_active:
+		if not near_keypad:
+			gallery_code_entry_active = false
+			gallery_code_buffer = ""
+			dialogue_panel.visible = false
+			return false
 		_refresh_gallery_code_prompt()
 		return true
 	if not near_keypad:
 		return false
-	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to enter gallery door code.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		gallery_code_entry_active = true
@@ -1435,7 +1582,7 @@ func _handle_gallery_code_lock_interaction() -> bool:
 func _refresh_gallery_code_prompt() -> void:
 	dialogue_panel.visible = true
 	var suffix := "_" if gallery_code_buffer.length() < GALLERY_CODE_MAX_LEN else ""
-	_set_dialogue_message("Enter code: %s%s\n[Enter=confirm, Backspace, Esc]" % [gallery_code_buffer, suffix])
+	_set_dialogue_message("Enter code: %s%s" % [gallery_code_buffer, suffix])
 
 func _submit_gallery_code() -> void:
 	if gallery_code_buffer == GALLERY_CODE_REQUIRED:
@@ -1444,12 +1591,10 @@ func _submit_gallery_code() -> void:
 		gallery_code_buffer = ""
 		_update_gallery_code_door()
 		_play_door_open_sfx()
-		dialogue_panel.visible = true
-		_set_dialogue_message("Code accepted. Door unlocked.")
+		_show_loot_message("Code accepted. Door unlocked.", ACTION_MESSAGE_DURATION)
 		return
 	gallery_code_buffer = ""
-	dialogue_panel.visible = true
-	_set_dialogue_message("Wrong code.\n\nPress E to try again.")
+	_show_loot_message("Wrong code.\n\nPress E to try again.", ACTION_MESSAGE_DURATION)
 
 func _wear_doctor_clothes() -> void:
 	is_disguised = true
@@ -1465,7 +1610,8 @@ func _wear_doctor_clothes() -> void:
 	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 	_set_doctor_bed_pose()
 	_show_keycard_fx_for_cue(1)
-	dialogue_panel.visible = false
+	dialogue_panel.visible = true
+	_set_dialogue_message("Press E to open.")
 
 func _setup_keycard_fx_ui() -> void:
 	keycard_fx_layer = CanvasLayer.new()
@@ -1499,14 +1645,17 @@ func _setup_keycard_fx_ui() -> void:
 	keycard_fx_icon.size = Vector2(280, 280)
 	keycard_fx_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	keycard_fx_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	keycard_fx_icon.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	keycard_fx_icon.position = Vector2(-140, -140)
+	keycard_fx_icon.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	keycard_fx_icon.position = Vector2.ZERO
 	keycard_fx_icon.visible = false
 	keycard_fx_layer.add_child(keycard_fx_icon)
 
 func _show_keycard_fx_for_cue(index_1_based: int) -> void:
 	keycard_fx_active = true
 	keycard_fx_timer = 0.0
+	var target_position := _get_keycard_fx_target_position(index_1_based)
+	pending_inventory_reveal_index = index_1_based
+	_refresh_inventory_ui()
 	keycard_fx_rect.visible = true
 	keycard_fx_label.visible = false
 	keycard_fx_rect.rotation = 0.0
@@ -1514,11 +1663,16 @@ func _show_keycard_fx_for_cue(index_1_based: int) -> void:
 	keycard_fx_rect.position = Vector2.ZERO
 	keycard_fx_rect.pivot_offset = get_viewport_rect().size * 0.5
 	if keycard_fx_icon != null:
+		var viewport_center := get_viewport_rect().size * 0.5
 		keycard_fx_icon.texture = _get_key_texture_for_uses(index_1_based)
 		keycard_fx_icon.visible = true
 		keycard_fx_icon.scale = Vector2.ZERO
 		keycard_fx_icon.rotation = 0.0
 		keycard_fx_icon.pivot_offset = keycard_fx_icon.size * 0.5
+		keycard_fx_icon.position = viewport_center - keycard_fx_icon.size * 0.5
+		keycard_fx_icon_fly_start = keycard_fx_icon.position
+		keycard_fx_icon_fly_target = target_position
+		keycard_fx_icon_fly_active = false
 
 func _update_keycard_fx(delta: float) -> void:
 	if not keycard_fx_active:
@@ -1531,16 +1685,49 @@ func _update_keycard_fx(delta: float) -> void:
 	var fade_alpha: float = 1.0 - fade_t
 	keycard_fx_rect.rotation += delta * keycard_fx_spin_speed
 	keycard_fx_rect.scale = Vector2.ONE * lerpf(0.0, keycard_fx_final_scale, intro_ease)
-	keycard_fx_rect.modulate.a = (0.72 + 0.12 * sin(keycard_fx_timer * 6.0)) * intro_ease * fade_alpha
+	var burst_alpha := fade_alpha
+	if keycard_fx_timer > KEYCARD_FX_FLY_DELAY:
+		var burst_t := clampf((keycard_fx_timer - KEYCARD_FX_FLY_DELAY) / KEYCARD_FX_FLY_DURATION, 0.0, 1.0)
+		burst_alpha *= 1.0 - burst_t
+	keycard_fx_rect.modulate.a = (0.72 + 0.12 * sin(keycard_fx_timer * 6.0)) * intro_ease * burst_alpha
 	if keycard_fx_icon != null and keycard_fx_icon.visible:
-		keycard_fx_icon.scale = Vector2.ONE * lerpf(0.0, keycard_fx_icon_final_scale, intro_ease)
-		keycard_fx_icon.modulate.a = intro_ease * fade_alpha
+		if keycard_fx_timer <= KEYCARD_FX_FLY_DELAY:
+			keycard_fx_icon.scale = Vector2.ONE * lerpf(0.0, keycard_fx_icon_final_scale, intro_ease)
+			keycard_fx_icon.modulate.a = intro_ease
+		else:
+			keycard_fx_icon_fly_active = true
+			var fly_t := clampf((keycard_fx_timer - KEYCARD_FX_FLY_DELAY) / KEYCARD_FX_FLY_DURATION, 0.0, 1.0)
+			var fly_ease := 1.0 - pow(1.0 - fly_t, 3.0)
+			keycard_fx_icon.position = keycard_fx_icon_fly_start.lerp(keycard_fx_icon_fly_target, fly_ease)
+			keycard_fx_icon.scale = Vector2.ONE * lerpf(keycard_fx_icon_final_scale, 0.1715, fly_ease)
+			keycard_fx_icon.modulate.a = lerpf(0.6, 1.0, fly_ease)
+			if fly_t >= 1.0:
+				keycard_fx_icon.position = keycard_fx_icon_fly_target
 	if keycard_fx_timer >= keycard_fx_duration:
 		keycard_fx_active = false
 		keycard_fx_rect.visible = false
 		keycard_fx_label.visible = false
 		if keycard_fx_icon != null:
 			keycard_fx_icon.visible = false
+			keycard_fx_icon_fly_active = false
+		if pending_inventory_reveal_index > 0:
+			pending_inventory_reveal_index = 0
+			_refresh_inventory_ui()
+
+func _get_keycard_fx_target_position(index_1_based: int) -> Vector2:
+	var idx := _get_inventory_slot_index_for_cue(index_1_based)
+	if inventory_panel != null and inventory_row != null and idx >= 0 and idx < inventory_slots.size():
+		var panel_rect := inventory_panel.get_global_rect()
+		var row_origin := panel_rect.position + inventory_row.position
+		var slot_size := Vector2(48, 48)
+		var separation := float(inventory_row.get_theme_constant("separation"))
+		var slot_center := row_origin + Vector2(idx * (slot_size.x + separation) + slot_size.x * 0.5, slot_size.y * 0.5)
+		return slot_center - keycard_fx_icon.size * 0.5
+	if key_hud_icon != null:
+		var hud_rect := key_hud_icon.get_global_rect()
+		return hud_rect.get_center() - keycard_fx_icon.size * 0.5
+	var viewport_center := get_viewport_rect().size * 0.5
+	return viewport_center - keycard_fx_icon.size * 0.5
 
 func _unlock_pre_surgery_door() -> void:
 	if pre_surgery_unlocked:
@@ -1571,14 +1758,14 @@ func _lock_pre_surgery_door() -> void:
 		pre_surgery_lock_icon.visible = true
 
 func _setup_key_hud_ui() -> void:
-	var hud := CanvasLayer.new()
-	hud.layer = 30
-	add_child(hud)
+	key_hud_layer = CanvasLayer.new()
+	key_hud_layer.layer = 30
+	add_child(key_hud_layer)
 
 	var panel := Panel.new()
 	panel.position = Vector2(22, 22)
 	panel.size = Vector2(238, 84)
-	hud.add_child(panel)
+	key_hud_layer.add_child(panel)
 
 	key_hud_icon = TextureRect.new()
 	key_hud_icon.position = Vector2(10, 10)
@@ -1615,18 +1802,18 @@ func _setup_inventory_ui() -> void:
 	add_child(inventory_layer)
 
 	inventory_panel = Panel.new()
-	inventory_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	inventory_panel.offset_left = 220
-	inventory_panel.offset_right = -220
-	inventory_panel.offset_bottom = -14
-	inventory_panel.offset_top = -88
+	inventory_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	inventory_panel.offset_left = -1010
+	inventory_panel.offset_right = -24
+	inventory_panel.offset_top = 18
+	inventory_panel.offset_bottom = 92
 	inventory_layer.add_child(inventory_panel)
 
-	var row := HBoxContainer.new()
-	row.position = Vector2(14, 12)
-	row.size = Vector2(952, 50)
-	row.add_theme_constant_override("separation", 8)
-	inventory_panel.add_child(row)
+	inventory_row = HBoxContainer.new()
+	inventory_row.position = Vector2(14, 12)
+	inventory_row.size = Vector2(952, 50)
+	inventory_row.add_theme_constant_override("separation", 8)
+	inventory_panel.add_child(inventory_row)
 
 	for i in range(KEY_USE_MAX):
 		var slot := TextureRect.new()
@@ -1638,15 +1825,15 @@ func _setup_inventory_ui() -> void:
 		slot.mouse_entered.connect(_on_inventory_slot_mouse_entered.bind(i + 1))
 		slot.mouse_exited.connect(_on_inventory_slot_mouse_exited)
 		slot.modulate = Color(0.35, 0.35, 0.35, 0.85)
-		row.add_child(slot)
+		inventory_row.add_child(slot)
 		inventory_slots.append(slot)
 
 	inventory_hover_panel = Panel.new()
 	inventory_hover_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	inventory_hover_panel.offset_left = 120
 	inventory_hover_panel.offset_right = -120
-	inventory_hover_panel.offset_top = 70
-	inventory_hover_panel.offset_bottom = 330
+	inventory_hover_panel.offset_top = 140
+	inventory_hover_panel.offset_bottom = 360
 	inventory_hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tip_style := StyleBoxFlat.new()
 	tip_style.bg_color = Color(0.04, 0.04, 0.06, 0.92)
@@ -1663,16 +1850,30 @@ func _setup_inventory_ui() -> void:
 	inventory_hover_panel.visible = false
 	inventory_layer.add_child(inventory_hover_panel)
 
+	inventory_hover_title_label = Label.new()
+	inventory_hover_title_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	inventory_hover_title_label.offset_left = 22
+	inventory_hover_title_label.offset_right = -22
+	inventory_hover_title_label.offset_top = 16
+	inventory_hover_title_label.offset_bottom = 52
+	inventory_hover_title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inventory_hover_title_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	inventory_hover_title_label.add_theme_font_size_override("font_size", 16)
+	inventory_hover_title_label.add_theme_font_override("font", PIXEL_FONT)
+	inventory_hover_title_label.add_theme_color_override("font_color", Color(0.95, 0.82, 0.22, 1))
+	inventory_hover_title_label.text = ""
+	inventory_hover_panel.add_child(inventory_hover_title_label)
+
 	inventory_hover_label = Label.new()
 	inventory_hover_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	inventory_hover_label.offset_left = 22
 	inventory_hover_label.offset_right = -22
-	inventory_hover_label.offset_top = 16
+	inventory_hover_label.offset_top = 52
 	inventory_hover_label.offset_bottom = -16
 	inventory_hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	inventory_hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	inventory_hover_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	inventory_hover_label.add_theme_font_size_override("font_size", 28)
+	inventory_hover_label.add_theme_font_size_override("font_size", 22)
 	inventory_hover_label.add_theme_font_override("font", PIXEL_FONT)
 	inventory_hover_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	inventory_hover_label.text = ""
@@ -1685,16 +1886,21 @@ func _update_inventory_visibility() -> void:
 	if inventory_panel == null:
 		return
 	var show_hover := hovered_inventory_index > 0
+	var show_inventory := _should_show_cue_ui()
 	# Inventory should always remain visible above gameplay shadows.
-	inventory_panel.visible = true
+	inventory_panel.visible = show_inventory
 	if inventory_hover_panel != null:
-		inventory_hover_panel.visible = show_hover
+		inventory_hover_panel.visible = show_inventory and show_hover
 
 func _refresh_inventory_ui() -> void:
 	for i in range(inventory_slots.size()):
 		var slot := inventory_slots[i]
-		if i < cue_collected.size() and cue_collected[i]:
-			slot.texture = _get_key_texture_for_uses(i + 1)
+		var cue_id := 0
+		if i < inventory_slot_cues.size():
+			cue_id = inventory_slot_cues[i]
+		var hide_for_fly_in := pending_inventory_reveal_index == cue_id and cue_id > 0
+		if cue_id > 0 and not hide_for_fly_in:
+			slot.texture = _get_key_texture_for_uses(cue_id)
 			slot.modulate = Color(1, 1, 1, 1)
 			slot.visible = true
 			slot.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1703,8 +1909,8 @@ func _refresh_inventory_ui() -> void:
 			slot.visible = false
 			slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if hovered_inventory_index > 0:
-		var idx := hovered_inventory_index - 1
-		if idx < 0 or idx >= cue_collected.size() or not cue_collected[idx]:
+		var slot_idx := hovered_inventory_index - 1
+		if slot_idx < 0 or slot_idx >= inventory_slot_cues.size() or inventory_slot_cues[slot_idx] <= 0:
 			_on_inventory_slot_mouse_exited()
 
 func _set_cue_collected(index_1_based: int, collected: bool) -> void:
@@ -1715,22 +1921,54 @@ func _set_cue_collected(index_1_based: int, collected: bool) -> void:
 	if collected and not cue_notes.has(index_1_based):
 		cue_notes[index_1_based] = _get_default_cue_note(index_1_based)
 	if collected:
+		_assign_cue_to_inventory_slot(index_1_based)
 		latest_collected_cue_index = index_1_based
-	elif latest_collected_cue_index == index_1_based:
-		latest_collected_cue_index = 0
-		for i in range(cue_collected.size() - 1, -1, -1):
-			if cue_collected[i]:
-				latest_collected_cue_index = i + 1
-				break
+	else:
+		_remove_cue_from_inventory_slot(index_1_based)
+		if latest_collected_cue_index == index_1_based:
+			latest_collected_cue_index = 0
+			for i in range(cue_collected.size() - 1, -1, -1):
+				if cue_collected[i]:
+					latest_collected_cue_index = i + 1
+					break
 	_refresh_inventory_ui()
 	_refresh_key_hud()
 
+func _assign_cue_to_inventory_slot(cue_id: int) -> void:
+	if _get_inventory_slot_index_for_cue(cue_id) != -1:
+		return
+	for i in range(inventory_slot_cues.size()):
+		if inventory_slot_cues[i] == 0:
+			inventory_slot_cues[i] = cue_id
+			return
+
+func _remove_cue_from_inventory_slot(cue_id: int) -> void:
+	var remove_index := _get_inventory_slot_index_for_cue(cue_id)
+	if remove_index == -1:
+		return
+	inventory_slot_cues.remove_at(remove_index)
+	inventory_slot_cues.append(0)
+
+func _get_inventory_slot_index_for_cue(cue_id: int) -> int:
+	for i in range(inventory_slot_cues.size()):
+		if inventory_slot_cues[i] == cue_id:
+			return i
+	return -1
+
+func _clear_inventory_slot_assignments() -> void:
+	inventory_slot_cues.resize(KEY_USE_MAX)
+	for i in range(KEY_USE_MAX):
+		inventory_slot_cues[i] = 0
+
 func _on_inventory_slot_mouse_entered(index_1_based: int) -> void:
-	var idx := index_1_based - 1
-	if idx < 0 or idx >= cue_collected.size() or not cue_collected[idx]:
+	var slot_idx := index_1_based - 1
+	if slot_idx < 0 or slot_idx >= inventory_slot_cues.size():
+		return
+	var cue_id := inventory_slot_cues[slot_idx]
+	if cue_id <= 0:
 		return
 	hovered_inventory_index = index_1_based
-	_apply_inventory_hover_text(_get_cue_note(index_1_based))
+	_apply_inventory_hover_text(_get_cue_note(cue_id))
 	if inventory_hover_panel != null:
 		inventory_hover_panel.visible = true
 
@@ -1747,13 +1985,13 @@ func _get_cue_note(index_1_based: int) -> String:
 func _get_default_cue_note(index_1_based: int) -> String:
 	match index_1_based:
 		1:
-			return "Cue 1 (Doctor ID): Security ID taken from the doctor. Opens restricted hospital doors."
+			return "Doctor ID: Security ID taken from the doctor. Opens restricted hospital doors."
 		2:
-			return "Cue 2 (Staff Room Record): People are listed as 'material' with a price tag."
+			return "Staff Room Record: People are listed as 'material' with a price tag."
 		3:
-			return "Cue 3 (Blue Card): Access card used to unlock the storage door."
+			return "Blue Card: Access card used to unlock the storage door."
 		4:
-			return "Cue 4 (Crowbar): Tool used to force open sealed crates and boxes."
+			return "Crowbar: Tool used to force open sealed crates and boxes."
 		5:
 			return CUE_FIVE_INVOICE_TEXT
 		6:
@@ -1765,22 +2003,46 @@ func _get_default_cue_note(index_1_based: int) -> String:
 		11:
 			return CUE_ELEVEN_CHARITY_TEXT
 		_:
-			return "Cue %d: Collected evidence." % index_1_based
+			return "Collected evidence."
 
 func _apply_inventory_hover_text(text: String) -> void:
-	if inventory_hover_label == null or inventory_hover_panel == null:
+	if inventory_hover_label == null or inventory_hover_panel == null or inventory_hover_title_label == null:
 		return
-	inventory_hover_label.text = text
-	var line_count := text.count("\n") + 1
-	var font_size := 32
+	var parsed := _split_inventory_hover_text(text)
+	inventory_hover_title_label.text = String(parsed["title"])
+	var body_text := String(parsed["body"])
+	inventory_hover_label.text = body_text
+	var line_count := body_text.count("\n") + 1
+	var font_size := 22
 	if line_count >= 7:
-		font_size = 22
+		font_size = 16
 	elif line_count >= 5:
-		font_size = 26
+		font_size = 18
 	inventory_hover_label.add_theme_font_size_override("font_size", font_size)
-	var target_height := clampi(int(round(line_count * (font_size * 1.45) + 48.0)), 220, 520)
-	inventory_hover_panel.offset_top = 70
-	inventory_hover_panel.offset_bottom = 70 + target_height
+	var title_height := 42 if not inventory_hover_title_label.text.is_empty() else 0
+	var target_height := clampi(int(round(line_count * (font_size * 1.45) + 48.0 + title_height)), 180, 420)
+	inventory_hover_panel.offset_top = 140
+	inventory_hover_panel.offset_bottom = 140 + target_height
+
+func _split_inventory_hover_text(text: String) -> Dictionary:
+	var trimmed := text.strip_edges()
+	var separator_index := trimmed.find(":")
+	if separator_index == -1:
+		return {
+			"title": trimmed.to_upper(),
+			"body": "",
+		}
+	var raw_title := trimmed.substr(0, separator_index).strip_edges()
+	var body := trimmed.substr(separator_index + 1, trimmed.length() - separator_index - 1).strip_edges()
+	var item_title := raw_title
+	var open_paren := raw_title.find("(")
+	var close_paren := raw_title.find(")")
+	if open_paren != -1 and close_paren > open_paren:
+		item_title = raw_title.substr(open_paren + 1, close_paren - open_paren - 1).strip_edges()
+	return {
+		"title": item_title.to_upper(),
+		"body": body,
+	}
 
 func _get_collected_cue_count() -> int:
 	var count := 0
@@ -1828,14 +2090,13 @@ func _handle_cue_two_interaction() -> bool:
 	if not cue_two_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to pick up Cue 2.")
+	_set_dialogue_message("Press E to pick up.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(2, true)
 		_update_cue_two_visibility()
 		_show_keycard_fx_for_cue(2)
-		dialogue_panel.visible = true
-		_set_dialogue_message("Evidence (Staff Room): People are recorded as 'material' with a price tag.")
+		dialogue_panel.visible = false
 	return true
 
 func _setup_cue_three_pickup() -> void:
@@ -1877,15 +2138,14 @@ func _handle_cue_three_interaction() -> bool:
 	if not cue_three_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to pick up Cue 3 (Blue Card).")
+	_set_dialogue_message("Press E to pick up.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(3, true)
 		current_checkpoint_index = 3
 		_update_cue_three_visibility()
 		_show_keycard_fx_for_cue(3)
-		dialogue_panel.visible = true
-		_set_dialogue_message("Evidence: Blue access card found in Staff Room.")
+		dialogue_panel.visible = false
 	return true
 
 func _setup_storage_door() -> void:
@@ -1994,17 +2254,16 @@ func _handle_storage_door_interaction() -> bool:
 	var near_door := absf(to_door.x) <= STORAGE_DOOR_INTERACT_HALF_WIDTH and absf(to_door.y) <= STORAGE_DOOR_INTERACT_HALF_HEIGHT
 	if not near_door:
 		return false
-	dialogue_panel.visible = true
 	if cue_collected.size() > 2 and cue_collected[2]:
-		_set_dialogue_message("Press E to use Blue Card (Cue 3) on Storage door.")
 		if Input.is_action_just_pressed("interact"):
 			_play_interact_sfx()
 			storage_unlocked = true
 			_update_storage_door_visibility()
 			_play_door_open_sfx()
-			_set_dialogue_message("Storage unlocked.")
+			_show_loot_message("Storage unlocked.", ACTION_MESSAGE_DURATION)
 	else:
-		_set_dialogue_message("Storage door locked. Need Blue Card.")
+		if Input.is_action_just_pressed("interact"):
+			_show_pickup_line("You: It's locked.")
 	return true
 
 func _setup_cue_four_pickup() -> void:
@@ -2047,14 +2306,13 @@ func _handle_cue_four_interaction() -> bool:
 	if not cue_four_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to pick up Cue 4 (Crowbar).")
+	_set_dialogue_message("Press E to pick up.")
 	if Input.is_action_just_pressed("interact"):
 		_play_event_sfx(CROWBAR_PICKUP_SFX, -6.0, 0.98, 1.02)
 		_set_cue_collected(4, true)
 		_update_cue_four_visibility()
 		_show_keycard_fx_for_cue(4)
-		dialogue_panel.visible = true
-		_set_dialogue_message("Evidence: Crowbar found in Storage.")
+		dialogue_panel.visible = false
 	return true
 
 func _setup_cue_six_pickup() -> void:
@@ -2098,15 +2356,15 @@ func _handle_cue_six_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() > 3 and cue_collected[3]:
-		_set_dialogue_message("Press E to pry out Cue 6 from the cabinet.")
+		_set_dialogue_message("Press E to pick up.")
 		if Input.is_action_just_pressed("interact"):
 			_set_cue_collected(6, true)
 			cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
 			_update_cue_six_visibility()
 			_show_keycard_fx_for_cue(6)
-			_set_dialogue_message("%s\n\nObjective: get Cue 9 from the boss desk, then use Cue 6 on the laptop." % CUE_SIX_TERMINAL_KEY_TEXT)
+			dialogue_panel.visible = false
 	else:
-		_set_dialogue_message("Cabinet is jammed. You need the crowbar (Cue 4).")
+		_set_dialogue_message("Cabinet is jammed. You need the crowbar.")
 	return true
 
 func _setup_storage_box() -> void:
@@ -2153,13 +2411,13 @@ func _handle_storage_box_interaction() -> bool:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() > 3 and cue_collected[3]:
-		_set_dialogue_message("Press E to use Crowbar (Cue 4) on the box.")
+		_set_dialogue_message("Press E to pick up.")
 		if Input.is_action_just_pressed("interact"):
 			_play_event_sfx(PAPER_PICKUP_SFX, -7.0, 0.98, 1.02)
 			_set_cue_collected(5, true)
 			cue_notes[5] = CUE_FIVE_INVOICE_TEXT
 			_show_keycard_fx_for_cue(5)
-			_set_dialogue_message("%s" % CUE_FIVE_INVOICE_TEXT)
+			dialogue_panel.visible = false
 	else:
 		_set_dialogue_message("Heavy box. You need a crowbar.")
 	return true
@@ -2193,6 +2451,8 @@ func _on_storage_elevator_body_exited(body: Node2D) -> void:
 	if body != player:
 		return
 	storage_elevator_in_range = false
+	if not gallery_code_entry_active:
+		dialogue_panel.visible = false
 
 func _on_upper_elevator_body_entered(body: Node2D) -> void:
 	if body != player:
@@ -2203,6 +2463,8 @@ func _on_upper_elevator_body_exited(body: Node2D) -> void:
 	if body != player:
 		return
 	upper_elevator_in_range = false
+	if not gallery_code_entry_active:
+		dialogue_panel.visible = false
 
 func _handle_storage_elevator_interaction() -> bool:
 	if not storage_unlocked:
@@ -2322,13 +2584,14 @@ func _update_blackout_overlay(delta: float) -> void:
 		return
 	if spawn_fade_alpha > 0.0:
 		spawn_fade_alpha = maxf(0.0, spawn_fade_alpha - delta / spawn_fade_duration)
+	var spawn_fade_eased := spawn_fade_alpha * spawn_fade_alpha
 
 	var anesthesia_alpha := 0.0
 	if state == SequenceState.ANESTHESIA_SPAM and spam_required > 0.0:
 		var ratio: float = clampf(spam_progress / spam_required, 0.0, 1.0)
 		anesthesia_alpha = 1.0 - ratio
 
-	var final_alpha := maxf(spawn_fade_alpha, anesthesia_alpha)
+	var final_alpha := maxf(spawn_fade_eased, anesthesia_alpha)
 	blackout_rect.modulate.a = clampf(final_alpha, 0.0, 1.0)
 	blackout_rect.visible = final_alpha > 0.001
 
@@ -2412,7 +2675,7 @@ func _missing_final_cues() -> Array[int]:
 func _missing_cues_text(missing: Array[int]) -> String:
 	var parts: PackedStringArray = []
 	for cue_id: int in missing:
-		parts.append(str(cue_id))
+		parts.append("Cue %d" % cue_id)
 	return ", ".join(parts)
 
 func _handle_cue_nine_interaction() -> bool:
@@ -2423,30 +2686,30 @@ func _handle_cue_nine_interaction() -> bool:
 	if not cue_nine_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to inspect boss desk archive (Cue 9).")
+	_set_dialogue_message("Press E to pick up.")
 	if not Input.is_action_just_pressed("interact"):
-		return true
-	var missing: Array[int] = _missing_final_cues()
-	if not missing.is_empty():
-		_set_dialogue_message("Need all required cues first.\nMissing: %s" % _missing_cues_text(missing))
 		return true
 	_set_cue_collected(9, true)
 	cue_notes[9] = CUE_NINE_FINAL_TEXT
+	current_checkpoint_index = 5
 	_update_cue_nine_visibility()
 	_show_keycard_fx_for_cue(9)
-	_set_dialogue_message("%s\n\nUse Cue 6 on the laptop to call backup." % CUE_NINE_FINAL_TEXT)
+	dialogue_panel.visible = false
 	return true
 
 func _handle_backup_laptop_interaction() -> bool:
+	if cue_collected.size() <= 8 or not cue_collected[8]:
+		return false
 	var near_laptop := player.global_position.distance_to(BACKUP_LAPTOP_POSITION) <= BACKUP_LAPTOP_INTERACT_RADIUS
 	if not near_laptop:
 		return false
 	dialogue_panel.visible = true
 	if cue_collected.size() <= 5 or not cue_collected[5]:
-		_set_dialogue_message("Laptop requires Cue 6 terminal key.")
+		_set_dialogue_message("Laptop requires the terminal key.")
 		return true
-	if cue_collected.size() <= 8 or not cue_collected[8]:
-		_set_dialogue_message("Need Cue 9 archive before transmitting backup call.")
+	var missing: Array[int] = _missing_final_cues()
+	if not missing.is_empty():
+		_set_dialogue_message("You need all of the cues to notify the authorities.\nMissing cues: %d" % missing.size())
 		return true
 	_set_dialogue_message("Press E to notify authorities.")
 	if Input.is_action_just_pressed("interact"):
@@ -2526,14 +2789,14 @@ func _handle_cue_eleven_interaction() -> bool:
 	if not cue_eleven_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to inspect Cue 11.")
+	_set_dialogue_message("Press E to pick up.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(11, true)
 		cue_notes[11] = CUE_ELEVEN_CHARITY_TEXT
 		_update_cue_eleven_visibility()
 		_show_keycard_fx_for_cue(11)
-		_set_dialogue_message("%s" % CUE_ELEVEN_CHARITY_TEXT)
+		dialogue_panel.visible = false
 	return true
 
 func _update_cue_seven_visibility() -> void:
@@ -2564,7 +2827,7 @@ func _handle_cue_seven_interaction() -> bool:
 	if not cue_seven_in_range:
 		return false
 	dialogue_panel.visible = true
-	_set_dialogue_message("Press E to inspect statue fragment (Cue 7).")
+	_set_dialogue_message("Press E to pick up.")
 	if Input.is_action_just_pressed("interact"):
 		_play_interact_sfx()
 		_set_cue_collected(7, true)
@@ -2572,11 +2835,14 @@ func _handle_cue_seven_interaction() -> bool:
 		current_checkpoint_index = 4
 		_update_cue_seven_visibility()
 		_show_keycard_fx_for_cue(7)
-		_set_dialogue_message("%s" % CUE_SEVEN_STATUE_TEXT)
+		dialogue_panel.visible = false
 	return true
 
 func _refresh_key_hud() -> void:
 	var found_count := _get_collected_cue_count()
+	var show_hud := _should_show_cue_ui()
+	if key_hud_layer != null:
+		key_hud_layer.visible = show_hud
 	if key_hud_label != null:
 		key_hud_label.text = "Cues: %d/%d" % [mini(found_count, CUE_DISPLAY_TOTAL), CUE_DISPLAY_TOTAL]
 	if key_hud_icon != null:
@@ -2584,7 +2850,7 @@ func _refresh_key_hud() -> void:
 			key_hud_icon.texture = _get_key_texture_for_uses(latest_collected_cue_index)
 		else:
 			key_hud_icon.texture = null
-		key_hud_icon.visible = found_count > 0
+		key_hud_icon.visible = show_hud and found_count > 0
 
 func _consume_key_use() -> bool:
 	if key_uses <= 0:
@@ -2671,6 +2937,7 @@ func _restart_from_checkpoint(index: int) -> void:
 	keycard_fx_active = false
 	keycard_fx_rect.visible = false
 	keycard_fx_label.visible = false
+	pending_inventory_reveal_index = 0
 	if keycard_fx_icon != null:
 		keycard_fx_icon.visible = false
 
@@ -2681,6 +2948,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		has_keycard = false
 		key_uses = 0
 		cue_notes.clear()
+		_clear_inventory_slot_assignments()
 		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
@@ -2706,6 +2974,10 @@ func _restart_from_checkpoint(index: int) -> void:
 		cell_door_lock.disabled = false
 		trigger_area.set_deferred("monitoring", true)
 		dialogue_panel.visible = false
+		intro_dialogue_active = true
+		intro_dialogue_pending = true
+		intro_dialogue_timer = INTRO_DIALOGUE_DELAY
+		intro_dialogue_index = 0
 		minigame_ui.visible = false
 		player.set_physics_process(true)
 		state = SequenceState.IDLE
@@ -2719,6 +2991,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		has_keycard = false
 		key_uses = 0
 		cue_notes.clear()
+		_clear_inventory_slot_assignments()
 		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
@@ -2741,6 +3014,11 @@ func _restart_from_checkpoint(index: int) -> void:
 		_lock_pre_surgery_door()
 		cell_door_lock.disabled = true
 		trigger_area.set_deferred("monitoring", false)
+		intro_dialogue_active = false
+		intro_dialogue_pending = false
+		intro_dialogue_timer = 0.0
+		intro_dialogue_index = 0
+		post_doctor_dialogue_wait_for_hallway = false
 		player.global_position = BED_POSITION
 		doctor.global_position = BED_POSITION + DOCTOR_TARGET_OFFSET
 		dialogue_panel.visible = false
@@ -2757,6 +3035,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		has_keycard = true
 		key_uses = 0
 		cue_notes.clear()
+		_clear_inventory_slot_assignments()
 		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
@@ -2779,6 +3058,11 @@ func _restart_from_checkpoint(index: int) -> void:
 		player_in_disguise_area = false
 		cell_door_lock.disabled = true
 		trigger_area.set_deferred("monitoring", false)
+		intro_dialogue_active = false
+		intro_dialogue_pending = false
+		intro_dialogue_timer = 0.0
+		intro_dialogue_index = 0
+		post_doctor_dialogue_wait_for_hallway = false
 		player.set_disguise_visual()
 		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 		_set_doctor_bed_pose()
@@ -2797,6 +3081,7 @@ func _restart_from_checkpoint(index: int) -> void:
 		has_keycard = true
 		key_uses = 0
 		cue_notes.clear()
+		_clear_inventory_slot_assignments()
 		hovered_inventory_index = -1
 		latest_collected_cue_index = 0
 		for i in range(cue_collected.size()):
@@ -2821,6 +3106,11 @@ func _restart_from_checkpoint(index: int) -> void:
 		player_in_disguise_area = false
 		cell_door_lock.disabled = true
 		trigger_area.set_deferred("monitoring", false)
+		intro_dialogue_active = false
+		intro_dialogue_pending = false
+		intro_dialogue_timer = 0.0
+		intro_dialogue_index = 0
+		post_doctor_dialogue_wait_for_hallway = false
 		player.set_disguise_visual()
 		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 		_set_doctor_bed_pose()
@@ -2833,11 +3123,67 @@ func _restart_from_checkpoint(index: int) -> void:
 		_refresh_door_lock_icons()
 		return
 
-	# Gallery checkpoint restart (after Cue 7).
+	if index == 4:
+		# Gallery checkpoint restart (after Cue 7).
+		room_vision_enabled = true
+		has_keycard = true
+		key_uses = 0
+		cue_notes.clear()
+		_clear_inventory_slot_assignments()
+		hovered_inventory_index = -1
+		latest_collected_cue_index = 0
+		for i in range(cue_collected.size()):
+			cue_collected[i] = false
+		_set_cue_collected(1, true)
+		_set_cue_collected(2, true)
+		_set_cue_collected(3, true)
+		_set_cue_collected(4, true)
+		_set_cue_collected(5, true)
+		_set_cue_collected(6, true)
+		_set_cue_collected(7, true)
+		cue_notes[5] = CUE_FIVE_INVOICE_TEXT
+		cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
+		cue_notes[7] = CUE_SEVEN_STATUE_TEXT
+		_refresh_inventory_ui()
+		_update_cue_two_visibility()
+		_update_cue_three_visibility()
+		_update_cue_six_visibility()
+		_update_cue_seven_visibility()
+		_update_cue_nine_visibility()
+		_update_cue_eleven_visibility()
+		storage_unlocked = true
+		cue_four_available = true
+		_update_storage_door_visibility()
+		_update_cue_four_visibility()
+		hall_door_unlocked = true
+		end_room_door_unlocked = true
+		is_disguised = true
+		player_in_disguise_area = false
+		cell_door_lock.disabled = true
+		trigger_area.set_deferred("monitoring", false)
+		intro_dialogue_active = false
+		intro_dialogue_pending = false
+		intro_dialogue_timer = 0.0
+		intro_dialogue_index = 0
+		post_doctor_dialogue_wait_for_hallway = false
+		player.set_disguise_visual()
+		_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
+		_set_doctor_bed_pose()
+		_unlock_pre_surgery_door()
+		dialogue_panel.visible = false
+		minigame_ui.visible = false
+		player.set_physics_process(true)
+		state = SequenceState.DONE
+		_refresh_key_hud()
+		_refresh_door_lock_icons()
+		return
+
+	# Final checkpoint restart (after Cue 9).
 	room_vision_enabled = true
 	has_keycard = true
 	key_uses = 0
 	cue_notes.clear()
+	_clear_inventory_slot_assignments()
 	hovered_inventory_index = -1
 	latest_collected_cue_index = 0
 	for i in range(cue_collected.size()):
@@ -2849,9 +3195,13 @@ func _restart_from_checkpoint(index: int) -> void:
 	_set_cue_collected(5, true)
 	_set_cue_collected(6, true)
 	_set_cue_collected(7, true)
+	_set_cue_collected(9, true)
+	_set_cue_collected(11, true)
 	cue_notes[5] = CUE_FIVE_INVOICE_TEXT
 	cue_notes[6] = CUE_SIX_TERMINAL_KEY_TEXT
 	cue_notes[7] = CUE_SEVEN_STATUE_TEXT
+	cue_notes[9] = CUE_NINE_FINAL_TEXT
+	cue_notes[11] = CUE_ELEVEN_CHARITY_TEXT
 	_refresh_inventory_ui()
 	_update_cue_two_visibility()
 	_update_cue_three_visibility()
@@ -2869,6 +3219,11 @@ func _restart_from_checkpoint(index: int) -> void:
 	player_in_disguise_area = false
 	cell_door_lock.disabled = true
 	trigger_area.set_deferred("monitoring", false)
+	intro_dialogue_active = false
+	intro_dialogue_pending = false
+	intro_dialogue_timer = 0.0
+	intro_dialogue_index = 0
+	post_doctor_dialogue_wait_for_hallway = false
 	player.set_disguise_visual()
 	_set_doctor_texture_visual(PLAYER_BED_TEXTURE)
 	_set_doctor_bed_pose()
@@ -2900,5 +3255,3 @@ func _handle_checkpoint_cheat_input() -> void:
 		next_index = 0
 
 	_restart_from_checkpoint(next_index)
-	dialogue_panel.visible = true
-	_set_dialogue_message("Cheat checkpoint: %s" % checkpoint_names[current_checkpoint_index])

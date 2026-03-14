@@ -32,7 +32,7 @@
 [ext_resource type="Texture2D" uid="uid://cakxvgqng4jfg" path="res://nine.png" id="27_nine_tex"]
 [ext_resource type="Texture2D" uid="uid://c58tmsn5vmt6s" path="res://ed900c66f15a05063e0a9f81a76d860ebd90e628fcbe4e5d72d0703818fe89c7.png" id="27_vnl4d"]
 [ext_resource type="Texture2D" uid="uid://cl6bc4e2eklh" path="res://keypad.png" id="28_keypad_tex"]
-[ext_resource type="Texture2D" uid="uid://5dsbmuvbwwfl" path="res://laptop.png" id="29_laptop_tex"]
+[ext_resource type="Texture2D" uid="uid://dsieq5qo7g8dn" path="res://laptop2.png" id="29_laptop_tex"]
 [ext_resource type="FontFile" uid="uid://d18xj71bqx3la" path="res://PressStart2P-Regular.ttf" id="30_pixel_font"]
 [ext_resource type="Texture2D" uid="uid://cd2a3rjfq5ulj" path="res://splash.jpg" id="31_splash_tex"]
 [ext_resource type="Texture2D" uid="uid://cvn4h4v7fnu61" path="res://elevator_open.png" id="32_elevator_open_tex"]
@@ -948,6 +948,7 @@ offset_left = 28.0
 offset_top = 56.0
 offset_right = 1690.0
 offset_bottom = 152.0
+theme_override_constants/line_spacing = 10
 theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 28
 text = "Dialogue"
@@ -981,7 +982,7 @@ offset_right = 770.0
 offset_bottom = 70.0
 theme_override_fonts/font = ExtResource("30_pixel_font")
 theme_override_font_sizes/font_size = 30
-text = "Press E when marker hits the green zone"
+text = "Press E"
 horizontal_alignment = 1
 
 [node name="HitsLabel" type="Label" parent="MinigameUI/Panel" unique_id=1162700395]
@@ -1050,30 +1051,29 @@ offset_bottom = 517.0
 
 [node name="LaptopText" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400105]
 layout_mode = 0
-offset_left = 72.0
+offset_left = 52.0
 offset_top = 54.0
-offset_right = 690.0
-offset_bottom = 320.0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+offset_right = 716.0
+offset_bottom = 332.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/line_spacing = 10
 theme_override_fonts/font = ExtResource("30_pixel_font")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 28
 text = "Transmission"
 autowrap_mode = 3
 
 [node name="LaptopHint" type="Label" parent="LaptopEndingUI/LaptopFrame/ScreenPanel" unique_id=1044400106]
 layout_mode = 0
-offset_left = 72.0
+offset_left = 52.0
 offset_top = 372.0
-offset_right = 690.0
+offset_right = 716.0
 offset_bottom = 412.0
-theme_override_colors/font_color = Color(0, 0, 0, 0.35)
 theme_override_fonts/font = ExtResource("30_pixel_font")
-theme_override_font_sizes/font_size = 26
-text = "[Press E]"
+theme_override_font_sizes/font_size = 22
 horizontal_alignment = 2
 
 [node name="EndingSplashUI" type="CanvasLayer" parent="." unique_id=1044400107]
-layer = 25
+layer = 50
 visible = false
 
 [node name="Splash" type="TextureRect" parent="EndingSplashUI" unique_id=1044400108]
